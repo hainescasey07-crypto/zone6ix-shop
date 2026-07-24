@@ -112,6 +112,7 @@ const products = [
 ];
 
 let cart = JSON.parse(localStorage.getItem("zone6ixCart") || "[]");
+let currentOrderData = null;
 
 const turfProducts = document.getElementById("turfProducts");
 const gunProducts = document.getElementById("gunProducts");
@@ -247,41 +248,66 @@ function buildReview() {
     ? `£${cashTotal.toFixed(2)}`
     : `${robuxTotal.toLocaleString()} R$`;
 
+  currentOrderData = {
+    robloxUsername: document.getElementById("robloxUsername").value.trim(),
+    gangName: document.getElementById("gangName").value.trim(),
+    customerEmail: document.getElementById("customerEmail").value.trim(),
+    discordUsername: document.getElementById("discordUsername").value.trim(),
+    paymentMethod: paymentMethod === "cash" ? "Card / cash" : "Robux",
+    products: cart.map(item => item.name).join(", "),
+    cashTotal: `£${cashTotal.toFixed(2)}`,
+    robuxTotal: `${robuxTotal.toLocaleString()} R$`,
+    selectedTotal,
+    customRequest: document.getElementById("customRequest").value.trim(),
+    referenceLink:
+      document.getElementById("referenceLink").value.trim() || "None provided"
+  };
+
   document.getElementById("reviewContent").innerHTML = `
     <div class="review-list">
       <div class="review-line">
         <span>Roblox username</span>
-        <strong>${escapeHtml(document.getElementById("robloxUsername").value)}</strong>
+        <strong>${escapeHtml(currentOrderData.robloxUsername)}</strong>
       </div>
 
       <div class="review-line">
         <span>Gang name</span>
-        <strong>${escapeHtml(document.getElementById("gangName").value)}</strong>
+        <strong>${escapeHtml(currentOrderData.gangName)}</strong>
+      </div>
+
+      <div class="review-line">
+        <span>Email</span>
+        <strong>${escapeHtml(currentOrderData.customerEmail)}</strong>
       </div>
 
       <div class="review-line">
         <span>Discord</span>
-        <strong>${escapeHtml(document.getElementById("discordUsername").value)}</strong>
+        <strong>${escapeHtml(currentOrderData.discordUsername)}</strong>
       </div>
 
       <div class="review-line">
         <span>Payment choice</span>
-        <strong>${paymentMethod === "cash" ? "Card / cash" : "Robux"}</strong>
+        <strong>${escapeHtml(currentOrderData.paymentMethod)}</strong>
       </div>
 
       <div class="review-line">
         <span>Products</span>
-        <strong>${cart.map(item => item.name).join(", ")}</strong>
+        <strong>${escapeHtml(currentOrderData.products)}</strong>
       </div>
 
       <div class="review-line">
         <span>Total</span>
-        <strong>${selectedTotal}</strong>
+        <strong>${escapeHtml(currentOrderData.selectedTotal)}</strong>
       </div>
 
       <div class="review-line">
         <span>Request</span>
-        <strong>${escapeHtml(document.getElementById("customRequest").value)}</strong>
+        <strong>${escapeHtml(currentOrderData.customRequest)}</strong>
+      </div>
+
+      <div class="review-line">
+        <span>Reference link</span>
+        <strong>${escapeHtml(currentOrderData.referenceLink)}</strong>
       </div>
     </div>
   `;
@@ -329,10 +355,70 @@ document.getElementById("orderForm").addEventListener("submit", event => {
   buildReview();
 });
 
-document.getElementById("paymentButton").addEventListener("click", () => {
-  alert(
-    "The website design is working. We will connect Stripe and Robux payment links next."
-  );
+document.getElementById("paymentButton").addEventListener("click", async () => {
+  if (!currentOrderData) {
+    alert("Please review your order again.");
+    return;
+  }
+
+  const button = document.getElementById("paymentButton");
+  button.disabled = true;
+  button.textContent = "Sending order...";
+
+  try {
+    const response = await fetch(
+      "https://formsubmit.co/ajax/Hainescasey07@gmail.com",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          _subject: `New Zone6ix order — ${currentOrderData.gangName}`,
+          _template: "table",
+          _replyto: currentOrderData.customerEmail,
+          email: currentOrderData.customerEmail,
+          "Roblox Username": currentOrderData.robloxUsername,
+          "Gang Name": currentOrderData.gangName,
+          "Discord Username": currentOrderData.discordUsername,
+          "Payment Method": currentOrderData.paymentMethod,
+          "Products": currentOrderData.products,
+          "Cash Total": currentOrderData.cashTotal,
+          "Robux Total": currentOrderData.robuxTotal,
+          "Selected Total": currentOrderData.selectedTotal,
+          "Custom Request": currentOrderData.customRequest,
+          "Reference Link": currentOrderData.referenceLink,
+          "Website": "https://zone6ix-shop.pages.dev"
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result.success === false || result.success === "false") {
+      throw new Error(result.message || "The order could not be sent.");
+    }
+
+    document.getElementById("reviewContent").innerHTML = `
+      <div class="notice">
+        <strong>Order request sent.</strong><br>
+        Zone6ix has received your details. You will be contacted about payment
+        and whether the custom request can be completed.
+      </div>
+    `;
+
+    cart = [];
+    saveCart();
+    renderCart();
+
+    button.textContent = "Order sent";
+  } catch (error) {
+    console.error(error);
+    alert("The order could not be sent. Please try again.");
+    button.disabled = false;
+    button.textContent = "Send order request";
+  }
 });
 
 renderProducts();

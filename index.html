@@ -206,6 +206,7 @@
             <input
               type="text"
               id="robloxUsername"
+              name="roblox_username"
               placeholder="Your Roblox username"
               required
             >
@@ -216,6 +217,7 @@
             <input
               type="text"
               id="gangName"
+              name="gang_name"
               placeholder="Your gang name"
               required
             >
@@ -224,28 +226,41 @@
 
         <div class="form-row">
           <label>
-            Discord username
+            Email address
             <input
-              type="text"
-              id="discordUsername"
-              placeholder="Example: zone6ixuser"
+              type="email"
+              id="customerEmail"
+              name="email"
+              placeholder="Where we can contact you"
               required
             >
           </label>
 
           <label>
-            Payment method
-            <select id="paymentMethod" required>
-              <option value="cash">Card / cash price</option>
-              <option value="robux">Robux price</option>
-            </select>
+            Discord username
+            <input
+              type="text"
+              id="discordUsername"
+              name="discord_username"
+              placeholder="Example: zone6ixuser"
+              required
+            >
           </label>
         </div>
+
+        <label>
+          Payment method
+          <select id="paymentMethod" name="payment_method" required>
+            <option value="cash">Card / cash price</option>
+            <option value="robux">Robux price</option>
+          </select>
+        </label>
 
         <label>
           Custom request
           <textarea
             id="customRequest"
+            name="custom_request"
             rows="7"
             placeholder="Describe your turf, gun texture, 3D writing, emoji, level or other request..."
             required
@@ -257,6 +272,7 @@
           <input
             type="url"
             id="referenceLink"
+            name="reference_link"
             placeholder="Optional Discord, Imgur or image link"
           >
         </label>
@@ -325,11 +341,11 @@
     <div id="reviewContent"></div>
 
     <button class="primary-button full-width" id="paymentButton">
-      Continue to payment
+      Send order request
     </button>
 
     <p class="form-note">
-      Payment links will be connected during the next stage.
+      This sends the request to Zone6ix. Payment links are connected separately.
     </p>
   </div>
 
