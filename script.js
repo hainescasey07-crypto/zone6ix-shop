@@ -365,39 +365,55 @@ document.getElementById("paymentButton").addEventListener("click", async () => {
   button.disabled = true;
   button.textContent = "Sending order...";
 
+  const formData = new URLSearchParams({
+    _subject: `New Zone6ix order — ${currentOrderData.gangName}`,
+    _template: "table",
+    _replyto: currentOrderData.customerEmail,
+    email: currentOrderData.customerEmail,
+    "Roblox Username": currentOrderData.robloxUsername,
+    "Gang Name": currentOrderData.gangName,
+    "Discord Username": currentOrderData.discordUsername,
+    "Payment Method": currentOrderData.paymentMethod,
+    Products: currentOrderData.products,
+    "Cash Total": currentOrderData.cashTotal,
+    "Robux Total": currentOrderData.robuxTotal,
+    "Selected Total": currentOrderData.selectedTotal,
+    "Custom Request": currentOrderData.customRequest,
+    "Reference Link": currentOrderData.referenceLink,
+    Website: "https://zone6ix-shop.pages.dev"
+  });
+
   try {
     const response = await fetch(
       "https://formsubmit.co/ajax/Hainescasey07@gmail.com",
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
+          Accept: "application/json"
         },
-        body: JSON.stringify({
-          _subject: `New Zone6ix order — ${currentOrderData.gangName}`,
-          _template: "table",
-          _replyto: currentOrderData.customerEmail,
-          email: currentOrderData.customerEmail,
-          "Roblox Username": currentOrderData.robloxUsername,
-          "Gang Name": currentOrderData.gangName,
-          "Discord Username": currentOrderData.discordUsername,
-          "Payment Method": currentOrderData.paymentMethod,
-          "Products": currentOrderData.products,
-          "Cash Total": currentOrderData.cashTotal,
-          "Robux Total": currentOrderData.robuxTotal,
-          "Selected Total": currentOrderData.selectedTotal,
-          "Custom Request": currentOrderData.customRequest,
-          "Reference Link": currentOrderData.referenceLink,
-          "Website": "https://zone6ix-shop.pages.dev"
-        })
+        body: formData
       }
     );
 
-    const result = await response.json();
+    const responseText = await response.text();
 
-    if (!response.ok || result.success === false || result.success === "false") {
-      throw new Error(result.message || "The order could not be sent.");
+    let result = {};
+
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      result = {};
+    }
+
+    if (
+      !response.ok ||
+      String(result.success).toLowerCase() === "false"
+    ) {
+      throw new Error(
+        result.message ||
+        responseText ||
+        `FormSubmit returned error ${response.status}`
+      );
     }
 
     document.getElementById("reviewContent").innerHTML = `
@@ -409,13 +425,20 @@ document.getElementById("paymentButton").addEventListener("click", async () => {
     `;
 
     cart = [];
+    currentOrderData = null;
     saveCart();
     renderCart();
 
     button.textContent = "Order sent";
   } catch (error) {
-    console.error(error);
-    alert("The order could not be sent. Please try again.");
+    console.error("Zone6ix order error:", error);
+
+    alert(
+      "Order error: " +
+      (error.message || "Unknown error") +
+      "\n\nCheck that you are using the live pages.dev website."
+    );
+
     button.disabled = false;
     button.textContent = "Send order request";
   }
