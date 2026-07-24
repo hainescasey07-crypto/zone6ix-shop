@@ -111,7 +111,7 @@ export async function onRequestPost(context) {
 
     stripeForm.set(
       "success_url",
-      `${websiteOrigin}/?payment=success`
+      `${websiteOrigin}/?payment=success&session_id={CHECKOUT_SESSION_ID}`
     );
 
     stripeForm.set(
@@ -136,10 +136,27 @@ export async function onRequestPost(context) {
       cleanText(`${gangName} — ${robloxUsername}`, 200)
     );
 
+    const productSummary = Object.entries(quantities)
+      .map(([productId, quantity]) => {
+        const product = PRODUCTS[productId];
+
+        return quantity > 1
+          ? `${product.name} x${quantity}`
+          : product.name;
+      })
+      .join(", ");
+
+    const cashTotalPence = Object.entries(quantities)
+      .reduce((total, [productId, quantity]) => {
+        return total + PRODUCTS[productId].amount * quantity;
+      }, 0);
+
     const metadata = {
       gang_name: gangName,
       roblox_username: robloxUsername,
       discord_username: discordUsername,
+      products: cleanText(productSummary),
+      cash_total: `£${(cashTotalPence / 100).toFixed(2)}`,
       custom_request: customRequest,
       reference_link: referenceLink
     };

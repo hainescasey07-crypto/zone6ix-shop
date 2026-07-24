@@ -488,15 +488,6 @@ document
 
         const checkoutUrl = await createStripeCheckout();
 
-        try {
-          await sendOrderEmail("Awaiting Stripe payment");
-        } catch (emailError) {
-          console.warn(
-            "Checkout created, but order email failed:",
-            emailError
-          );
-        }
-
         window.location.assign(checkoutUrl);
         return;
       }
@@ -529,34 +520,61 @@ document
     }
   });
 
-function handleStripeReturn() {
+async function handleStripeReturn() {
   const parameters = new URLSearchParams(
     window.location.search
   );
 
   const paymentResult = parameters.get("payment");
+  const sessionId = parameters.get("session_id");
 
-  if (paymentResult === "success") {
-    cart = [];
-    currentOrderData = null;
-    saveCart();
-    renderCart();
-
-    setTimeout(() => {
-      alert(
-        "Test payment successful! " +
-        "Your Zone6ix order has been received."
+  if (paymentResult === "success" && sessionId) {
+    try {
+      const response = await fetch(
+        `/api/checkout-status?session_id=${
+          encodeURIComponent(sessionId)
+        }`,
+        {
+          headers: {
+            Accept: "application/json"
+          }
+        }
       );
-    }, 200);
+
+      const result = await response.json();
+
+      if (!response.ok || result.paid !== true) {
+        throw new Error(
+          result.error ||
+          "Stripe has not confirmed this payment."
+        );
+      }
+
+      cart = [];
+      currentOrderData = null;
+      saveCart();
+      renderCart();
+
+      alert(
+        "Payment confirmed! Your paid Zone6ix order " +
+        "has been sent to the owner."
+      );
+    } catch (error) {
+      console.error("Payment confirmation error:", error);
+
+      alert(
+        "Stripe has not confirmed the payment yet. " +
+        "Do not pay again immediately. Contact Zone6ix " +
+        "if money was taken."
+      );
+    }
   }
 
   if (paymentResult === "cancelled") {
-    setTimeout(() => {
-      alert(
-        "Payment was cancelled. " +
-        "Your items are still in the basket."
-      );
-    }, 200);
+    alert(
+      "Payment was cancelled. Your items are still " +
+      "in the basket."
+    );
   }
 
   if (paymentResult) {
