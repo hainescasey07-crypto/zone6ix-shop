@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Order custom turfs, gang weapons, names, emojis and levels for Zone6ix."
+  >
+
+  <meta name="theme-color" content="#05070d">
+
+  <title>Zone6ix Customs | Build Your Gang</title>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="page-noise"></div>
+  <div class="ambient-light ambient-one"></div>
+  <div class="ambient-light ambient-two"></div>
+
+  <header class="navbar">
+    <a class="brand" href="#home" aria-label="Zone6ix Customs home">
+      <span class="brand-icon">
+        <span>Z6</span>
+      </span>
+
+      <span class="brand-copy">
+        <strong>ZONE6IX</strong>
+        <small>CUSTOMS</small>
+      </span>
+    </a>
+
+    <nav class="desktop-nav" aria-label="Main navigation">
+      <a href="#turfs">Turfs</a>
+      <a href="#guns">Weapons</a>
+      <a href="#identity">Identity</a>
+      <a href="#how-it-works">How it works</a>
+    </nav>
+
+    <div class="navbar-actions">
+      <a class="nav-order-link" href="#order">Place order</a>
+
+      <button
+        class="cart-button"
+        id="openCartButton"
+        type="button"
+      >
+        <span>Basket</span>
+        <strong id="cartCount">0</strong>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-copy">
+        <div class="status-pill">
+          <span class="status-light"></span>
+          Official Zone6ix custom shop
+        </div>
+
+        <h1>
+          Your gang.
+          <span>Your territory.</span>
+          Your identity.
+        </h1>
+
+        <p class="hero-description">
+          Build a gang that looks like nobody else. Order a custom
+          turf, exclusive weapons and a personalised gang identity
+          made for Zone6ix.
+        </p>
+
+        <div class="hero-actions">
+          <a class="primary-button" href="#turfs">
+            Explore the shop
+            <span aria-hidden="true">→</span>
+          </a>
+
+          <a class="secondary-button" href="#order">
+            Build an order
+          </a>
+        </div>
+
+        <div class="hero-proof">
+          <div>
+            <span>01</span>
+            <p>
+              <strong>Custom-built</strong>
+              Created around your gang
+            </p>
+          </div>
+
+          <div>
+            <span>02</span>
+            <p>
+              <strong>Two payment choices</strong>
+              Card or Robux
+            </p>
+          </div>
+
+          <div>
+            <span>03</span>
+            <p>
+              <strong>Order tracking</strong>
+              Unique buyer details
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-showcase">
+        <div class="showcase-topbar">
+          <div class="showcase-window-controls">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+
+          <p>ZONE6IX // GANG BUILDER</p>
+
+          <div class="online-label">
+            <span></span>
+            ONLINE
+          </div>
+        </div>
+
+        <div class="showcase-scene">
+          <div class="scene-grid"></div>
+          <div class="scene-moon"></div>
+
+          <div class="city-shape city-one"></div>
+          <div class="city-shape city-two"></div>
+          <div class="city-shape city-three"></div>
+
+          <div class="turf-building">
+            <div class="turf-roof">
+              <span>YOUR GANG</span>
+            </div>
+
+            <div class="turf-window turf-window-one"></div>
+            <div class="turf-window turf-window-two"></div>
+            <div class="turf-door"></div>
+            <div class="turf-graffiti">Z6</div>
+          </div>
+
+          <div class="weapon-card">
+            <span class="weapon-label">CUSTOM DROP</span>
+
+            <div class="weapon-visual">
+              <div class="weapon-body"></div>
+              <div class="weapon-magazine"></div>
+              <div class="weapon-stock"></div>
+            </div>
+
+            <strong>Gang Weapon</strong>
+            <small>Texture + logo + 3D writing</small>
+          </div>
+
+          <div class="scene-tag tag-one">TURF</div>
+          <div class="scene-tag tag-two">WEAPONS</div>
+          <div class="scene-tag tag-three">IDENTITY</div>
+        </div>
+
+        <div class="showcase-footer">
+          <div>
+            <small>PACKAGE STATUS</small>
+            <strong>Ready to customise</strong>
+          </div>
+
+          <button
+            class="mini-build-button"
+            type="button"
+            data-scroll-order
+          >
+            Start build
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="ticker" aria-label="Store features">
+      <div class="ticker-track">
+        <span>SMALL TURFS</span>
+        <i></i>
+        <span>CUSTOM GUNS</span>
+        <i></i>
+        <span>GANG EMOJIS</span>
+        <i></i>
+        <span>SECOND FLOORS</span>
+        <i></i>
+        <span>3D WEAPON TEXT</span>
+        <i></i>
+        <span>IDENTITY BUNDLES</span>
+      </div>
+    </section>
+
+    <section class="store-overview">
+      <div class="overview-heading">
+        <p class="eyebrow">ZONE6IX MARKETPLACE</p>
+
+        <h2>
+          Everything your gang needs
+          <span>to stand out.</span>
+        </h2>
+      </div>
+
+      <div class="overview-cards">
+        <a class="overview-card" href="#turfs">
+          <span class="overview-number">01</span>
+
+          <div>
+            <h3>Custom Turfs</h3>
+            <p>
+              Private bases designed around your gang and style.
+            </p>
+          </div>
+
+          <strong>→</strong>
+        </a>
+
+        <a class="overview-card" href="#guns">
+          <span class="overview-number">02</span>
+
+          <div>
+            <h3>Gang Weapons</h3>
+            <p>
+              Ready-made gold guns or completely custom designs.
+            </p>
+          </div>
+
+          <strong>→</strong>
+        </a>
+
+        <a class="overview-card" href="#identity">
+          <span class="overview-number">03</span>
+
+          <div>
+            <h3>Gang Identity</h3>
+            <p>
+              Add your own name, emoji and level display.
+            </p>
+          </div>
+
+          <strong>→</strong>
+        </a>
+      </div>
+    </section>
+
+    <section class="shop-section" id="turfs">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">CLAIM YOUR TERRITORY</p>
+          <h2>Custom gang turfs</h2>
+        </div>
+
+        <div class="section-description">
+          <p>
+            Choose a base size and send your gang name, logo,
+            room ideas and reference images.
+          </p>
+
+          <span>Starting from 350 R$</span>
+        </div>
+      </div>
+
+      <div class="product-grid" id="turfProducts"></div>
+    </section>
+
+    <section class="workshop-section">
+      <div class="workshop-visual">
+        <div class="blueprint-grid"></div>
+
+        <div class="blueprint-title">
+          <span>TURF BLUEPRINT</span>
+          <strong>MEDIUM BUILD</strong>
+        </div>
+
+        <div class="blueprint-building">
+          <div class="blueprint-room room-one">MAIN</div>
+          <div class="blueprint-room room-two">ARMOURY</div>
+          <div class="blueprint-room room-three">STORAGE</div>
+          <div class="blueprint-room room-four">ENTRY</div>
+        </div>
+
+        <div class="blueprint-details">
+          <span>Custom signage</span>
+          <span>Gang logo</span>
+          <span>Room layout</span>
+        </div>
+      </div>
+
+      <div class="workshop-copy">
+        <p class="eyebrow">BUILT AROUND YOUR GANG</p>
+
+        <h2>
+          More than a reskin.
+          <span>Make it yours.</span>
+        </h2>
+
+        <p>
+          Tell us how you want your turf to feel. Choose the
+          layout, rooms, branding, signs, graffiti and extra
+          details that represent your gang.
+        </p>
+
+        <div class="workshop-features">
+          <div>
+            <strong>Custom layout</strong>
+            <span>Rooms built around your request</span>
+          </div>
+
+          <div>
+            <strong>Gang branding</strong>
+            <span>Logos, signs and textures</span>
+          </div>
+
+          <div>
+            <strong>Expandable</strong>
+            <span>Add a second floor separately</span>
+          </div>
+        </div>
+
+        <a class="text-link" href="#order">
+          Send your turf idea
+          <span>→</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="shop-section" id="guns">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">EXCLUSIVE LOADOUTS</p>
+          <h2>Gang weapons</h2>
+        </div>
+
+        <div class="section-description">
+          <p>
+            Buy a ready-made gold weapon or request your own
+            texture, gang logo and 3D writing.
+          </p>
+
+          <span>Ready-made or fully custom</span>
+        </div>
+      </div>
+
+      <div class="product-grid" id="gunProducts"></div>
+    </section>
+
+    <section class="custom-gun-banner">
+      <div class="custom-gun-copy">
+        <p class="eyebrow">FULLY CUSTOM WEAPON</p>
+
+        <h2>Your gang name, built into the gun.</h2>
+
+        <p>
+          Send your textures, colours, logo and requested writing.
+          We can add 3D lettering directly onto the weapon model.
+        </p>
+
+        <a href="#guns" class="secondary-button">
+          View weapon options
+        </a>
+      </div>
+
+      <div class="custom-gun-display">
+        <div class="display-glow"></div>
+        <div class="display-ring ring-one"></div>
+        <div class="display-ring ring-two"></div>
+
+        <div class="large-weapon">
+          <div class="large-weapon-stock"></div>
+          <div class="large-weapon-body"></div>
+          <div class="large-weapon-top"></div>
+          <div class="large-weapon-barrel"></div>
+          <div class="large-weapon-mag"></div>
+          <div class="large-weapon-grip"></div>
+          <span>YOUR GANG</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="shop-section" id="identity">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">OWN YOUR IMAGE</p>
+          <h2>Gang identity</h2>
+        </div>
+
+        <div class="section-description">
+          <p>
+            Personalise how your gang appears with a custom name,
+            emoji and level.
+          </p>
+
+          <span>Available separately or bundled</span>
+        </div>
+      </div>
+
+      <div class="product-grid" id="identityProducts"></div>
+    </section>
+
+    <section class="bundle-highlight">
+      <div class="bundle-icon">
+        <span>Z6</span>
+      </div>
+
+      <div class="bundle-copy">
+        <p class="eyebrow">BEST VALUE</p>
+        <h2>Gang Identity Bundle</h2>
+
+        <p>
+          Get your custom name, emoji and level together for
+          less than buying each one separately.
+        </p>
+      </div>
+
+      <div class="bundle-items">
+        <span>Custom name</span>
+        <span>Custom emoji</span>
+        <span>Custom level</span>
+      </div>
+
+      <a class="primary-button" href="#identity">
+        View bundle
+        <span>→</span>
+      </a>
+    </section>
+
+    <section class="gallery-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">ZONE6IX ARCHIVE</p>
+          <h2>Previous work</h2>
+        </div>
+
+        <div class="section-description">
+          <p>
+            Completed turf and weapon screenshots can be added
+            here as the custom shop grows.
+          </p>
+        </div>
+      </div>
+
+      <div class="gallery-grid">
+        <article class="gallery-card gallery-large">
+          <div class="gallery-placeholder">
+            <span>Z6</span>
+            <p>Featured turf showcase</p>
+          </div>
+
+          <div class="gallery-caption">
+            <div>
+              <small>TURF BUILD</small>
+              <strong>Gang headquarters</strong>
+            </div>
+
+            <span>Coming soon</span>
+          </div>
+        </article>
+
+        <article class="gallery-card">
+          <div class="gallery-placeholder weapon-placeholder">
+            <span>01</span>
+            <p>Custom weapon</p>
+          </div>
+
+          <div class="gallery-caption">
+            <div>
+              <small>WEAPON</small>
+              <strong>Gang texture</strong>
+            </div>
+
+            <span>Coming soon</span>
+          </div>
+        </article>
+
+        <article class="gallery-card">
+          <div class="gallery-placeholder identity-placeholder">
+            <span>LVL</span>
+            <p>Gang identity</p>
+          </div>
+
+          <div class="gallery-caption">
+            <div>
+              <small>IDENTITY</small>
+              <strong>Name and emoji</strong>
+            </div>
+
+            <span>Coming soon</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="how-it-works" id="how-it-works">
+      <div class="process-heading">
+        <p class="eyebrow">FROM IDEA TO ZONE6IX</p>
+
+        <h2>
+          A simple order process.
+        </h2>
+
+        <p>
+          Build your basket, explain your idea and choose how
+          you want to pay.
+        </p>
+      </div>
+
+      <div class="process-steps">
+        <article>
+          <span class="step-number">01</span>
+
+          <div class="step-line"></div>
+
+          <h3>Build your basket</h3>
+
+          <p>
+            Add the turf, weapons and identity upgrades you want.
+          </p>
+        </article>
+
+        <article>
+          <span class="step-number">02</span>
+
+          <div class="step-line"></div>
+
+          <h3>Send your idea</h3>
+
+          <p>
+            Provide your gang details, references and custom request.
+          </p>
+        </article>
+
+        <article>
+          <span class="step-number">03</span>
+
+          <div class="step-line"></div>
+
+          <h3>Choose payment</h3>
+
+          <p>
+            Pay securely by card or complete your purchase in Robux.
+          </p>
+        </article>
+
+        <article>
+          <span class="step-number">04</span>
+
+          <div class="step-line"></div>
+
+          <h3>We build it</h3>
+
+          <p>
+            Your order is reviewed, created and added to Zone6ix.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="order-section" id="order">
+      <div class="order-sidebar">
+        <p class="eyebrow">CUSTOM ORDER</p>
+
+        <h2>Build your gang package.</h2>
+
+        <p class="order-intro">
+          Add your products first, then complete the form with
+          everything we need to start your order.
+        </p>
+
+        <div class="payment-method-card">
+          <div class="payment-icon">£</div>
+
+          <div>
+            <strong>Secure card payment</strong>
+            <span>Processed through Stripe Checkout</span>
+          </div>
+        </div>
+
+        <div class="payment-method-card">
+          <div class="payment-icon robux-icon">R$</div>
+
+          <div>
+            <strong>Robux payment</strong>
+            <span>Opens Zone6ix with your selected products</span>
+          </div>
+        </div>
+
+        <div class="order-warning">
+          <strong>Before work begins</strong>
+
+          <p>
+            Extremely complicated or unsuitable requests may need
+            changing. You will be contacted if anything needs discussing.
+          </p>
+        </div>
+      </div>
+
+      <form class="order-form" id="orderForm">
+        <div class="form-header">
+          <div>
+            <span>ORDER DETAILS</span>
+            <h3>Tell us about your gang</h3>
+          </div>
+
+          <div class="secure-badge">
+            <span>●</span>
+            SECURE
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span>Roblox username</span>
+
+            <input
+              type="text"
+              id="robloxUsername"
+              name="roblox_username"
+              placeholder="Your Roblox username"
+              autocomplete="off"
+              required
+            >
+          </label>
+
+          <label>
+            <span>Gang name</span>
+
+            <input
+              type="text"
+              id="gangName"
+              name="gang_name"
+              placeholder="Your gang name"
+              autocomplete="off"
+              required
+            >
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span>Email address</span>
+
+            <input
+              type="email"
+              id="customerEmail"
+              name="email"
+              placeholder="Where we can contact you"
+              autocomplete="email"
+              required
+            >
+          </label>
+
+          <label>
+            <span>Discord username</span>
+
+            <input
+              type="text"
+              id="discordUsername"
+              name="discord_username"
+              placeholder="Example: zone6ixuser"
+              autocomplete="off"
+              required
+            >
+          </label>
+        </div>
+
+        <label>
+          <span>Payment method</span>
+
+          <select
+            id="paymentMethod"
+            name="payment_method"
+            required
+          >
+            <option value="cash">
+              Card payment — Stripe
+            </option>
+
+            <option value="robux">
+              Robux payment — inside Zone6ix
+            </option>
+          </select>
+        </label>
+
+        <label>
+          <span>Custom request</span>
+
+          <textarea
+            id="customRequest"
+            name="custom_request"
+            rows="7"
+            placeholder="Describe your turf, gun texture, 3D writing, emoji, level or other request..."
+            required
+          ></textarea>
+        </label>
+
+        <label>
+          <span>Reference image link</span>
+
+          <input
+            type="url"
+            id="referenceLink"
+            name="reference_link"
+            placeholder="Optional Discord, Imgur or image link"
+          >
+        </label>
+
+        <button
+          class="primary-button form-submit"
+          type="submit"
+        >
+          Review my order
+          <span>→</span>
+        </button>
+
+        <p class="form-note">
+          Card orders use Stripe Checkout. Robux orders open Zone6ix
+          and prompt each selected purchase in-game.
+        </p>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-main">
+      <div class="footer-brand">
+        <a class="brand" href="#home">
+          <span class="brand-icon">
+            <span>Z6</span>
+          </span>
+
+          <span class="brand-copy">
+            <strong>ZONE6IX</strong>
+            <small>CUSTOMS</small>
+          </span>
+        </a>
+
+        <p>
+          Custom content created for the Zone6ix Roblox experience.
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <div>
+          <strong>Shop</strong>
+          <a href="#turfs">Turfs</a>
+          <a href="#guns">Weapons</a>
+          <a href="#identity">Identity</a>
+        </div>
+
+        <div>
+          <strong>Order</strong>
+          <a href="#how-it-works">How it works</a>
+          <a href="#order">Place an order</a>
+          <button type="button" id="footerBasketButton">
+            View basket
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© Zone6ix Customs</span>
+
+      <span>
+        Unofficial custom-order site for the Zone6ix Roblox experience.
+      </span>
+    </div>
+  </footer>
+
+  <aside class="cart-panel" id="cartPanel">
+    <div class="cart-header">
+      <div>
+        <p class="eyebrow">YOUR PACKAGE</p>
+        <h2>Basket</h2>
+      </div>
+
+      <button
+        class="close-button"
+        id="closeCartButton"
+        type="button"
+        aria-label="Close basket"
+      >
+        ×
+      </button>
+    </div>
+
+    <div class="cart-items" id="cartItems"></div>
+
+    <div class="cart-empty" id="cartEmpty">
+      <div class="empty-basket-icon">
+        <span>Z6</span>
+      </div>
+
+      <strong>Your basket is empty</strong>
+
+      <p>
+        Add a turf, weapon or identity upgrade to start your order.
+      </p>
+    </div>
+
+    <div class="cart-summary">
+      <div>
+        <span>Card total</span>
+        <strong id="cashTotal">£0.00</strong>
+      </div>
+
+      <div>
+        <span>Robux total</span>
+        <strong id="robuxTotal">0 R$</strong>
+      </div>
+
+      <button
+        class="primary-button full-width"
+        id="continueButton"
+        type="button"
+      >
+        Continue to order
+        <span>→</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="modal" id="reviewModal">
+    <button
+      class="close-button modal-close"
+      id="closeModalButton"
+      type="button"
+      aria-label="Close review"
+    >
+      ×
+    </button>
+
+    <p class="eyebrow">FINAL CHECK</p>
+    <h2>Review your order</h2>
+
+    <p class="modal-intro">
+      Check your details before continuing to payment.
+    </p>
+
+    <div id="reviewContent"></div>
+
+    <button
+      class="primary-button full-width"
+      id="paymentButton"
+      type="button"
+    >
+      Pay securely with Stripe
+    </button>
+
+    <p class="form-note">
+      Card payments open Stripe Checkout. Robux orders open Zone6ix.
+    </p>
+  </div>
+
+  <script src="script.js"></script>
+
+  <script>
+    const footerBasketButton =
+      document.getElementById("footerBasketButton");
+
+    if (footerBasketButton) {
+      footerBasketButton.addEventListener("click", function () {
+        document.getElementById("openCartButton").click();
+      });
+    }
+  </script>
+</body>
+</html>
