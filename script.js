@@ -355,26 +355,18 @@ document.getElementById("orderForm").addEventListener("submit", event => {
   buildReview();
 });
 
-document.getElementById("paymentButton").addEventListener("click", async () => {
-  if (!currentOrderData) {
-    alert("Please review your order again.");
-    return;
-  }
-
-  const button = document.getElementById("paymentButton");
-  button.disabled = true;
-  button.textContent = "Sending order...";
-
+async function sendOrderEmail(orderStatus) {
   const formData = new URLSearchParams({
     _subject: `New Zone6ix order — ${currentOrderData.gangName}`,
     _template: "table",
     _replyto: currentOrderData.customerEmail,
     email: currentOrderData.customerEmail,
+    "Order Status": orderStatus,
     "Roblox Username": currentOrderData.robloxUsername,
     "Gang Name": currentOrderData.gangName,
     "Discord Username": currentOrderData.discordUsername,
     "Payment Method": currentOrderData.paymentMethod,
-    Products: currentOrderData.products,
+    "Products": currentOrderData.products,
     "Cash Total": currentOrderData.cashTotal,
     "Robux Total": currentOrderData.robuxTotal,
     "Selected Total": currentOrderData.selectedTotal,
@@ -383,66 +375,200 @@ document.getElementById("paymentButton").addEventListener("click", async () => {
     Website: "https://zone6ix-shop.pages.dev"
   });
 
+  const response = await fetch(
+    "https://formsubmit.co/ajax/Hainescasey07@gmail.com",
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json"
+      },
+      body: formData
+    }
+  );
+
+  const responseText = await response.text();
+
+  let result = {};
+
   try {
-    const response = await fetch(
-      "https://formsubmit.co/ajax/Hainescasey07@gmail.com",
-      {
-        method: "POST",
-        headers: {
-          Accept: "application/json"
-        },
-        body: formData
-      }
+    result = JSON.parse(responseText);
+  } catch {
+    result = {};
+  }
+
+  if (
+    !response.ok ||
+    String(result.success).toLowerCase() === "false"
+  ) {
+    throw new Error(
+      result.message ||
+      responseText ||
+      "The order email could not be sent."
     );
+  }
+}
 
-    const responseText = await response.text();
+async function createStripeCheckout() {
+  const response = await fetch(
+    "/api/create-checkout-session",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify({
+        productIds: cart.map(item => item.id),
+        customer: {
+          robloxUsername: currentOrderData.robloxUsername,
+          gangName: currentOrderData.gangName,
+          email: currentOrderData.customerEmail,
+          discordUsername: currentOrderData.discordUsername,
+          customRequest: currentOrderData.customRequest,
+          referenceLink: currentOrderData.referenceLink
+        }
+      })
+    }
+  );
 
-    let result = {};
+  const result = await response.json();
+
+  if (!response.ok || !result.url) {
+    throw new Error(
+      result.error ||
+      "Stripe could not create the checkout."
+    );
+  }
+
+  return result.url;
+}
+
+function showOrderSentMessage(message) {
+  document.getElementById("reviewContent").innerHTML = `
+    <div class="notice">
+      <strong>Order request sent.</strong><br>
+      ${escapeHtml(message)}
+    </div>
+  `;
+}
+
+function updatePaymentButtonLabel() {
+  const paymentMethod =
+    document.getElementById("paymentMethod").value;
+
+  const button = document.getElementById("paymentButton");
+
+  button.textContent =
+    paymentMethod === "cash"
+      ? "Pay securely with Stripe"
+      : "Send Robux order request";
+}
+
+document
+  .getElementById("paymentMethod")
+  .addEventListener("change", updatePaymentButtonLabel);
+
+document
+  .getElementById("paymentButton")
+  .addEventListener("click", async () => {
+    if (!currentOrderData) {
+      alert("Please review your order again.");
+      return;
+    }
+
+    const button = document.getElementById("paymentButton");
+    const paymentMethod =
+      document.getElementById("paymentMethod").value;
+
+    button.disabled = true;
 
     try {
-      result = JSON.parse(responseText);
-    } catch {
-      result = {};
-    }
+      if (paymentMethod === "cash") {
+        button.textContent = "Preparing Stripe checkout...";
 
-    if (
-      !response.ok ||
-      String(result.success).toLowerCase() === "false"
-    ) {
-      throw new Error(
-        result.message ||
-        responseText ||
-        `FormSubmit returned error ${response.status}`
+        const checkoutUrl = await createStripeCheckout();
+
+        try {
+          await sendOrderEmail("Awaiting Stripe payment");
+        } catch (emailError) {
+          console.warn(
+            "Checkout created, but order email failed:",
+            emailError
+          );
+        }
+
+        window.location.assign(checkoutUrl);
+        return;
+      }
+
+      button.textContent = "Sending Robux order...";
+
+      await sendOrderEmail("Awaiting Robux payment");
+
+      showOrderSentMessage(
+        "Your Robux order details have been received. " +
+        "The Robux purchase links will be connected next."
       );
+
+      cart = [];
+      currentOrderData = null;
+      saveCart();
+      renderCart();
+
+      button.textContent = "Order sent";
+    } catch (error) {
+      console.error("Zone6ix payment error:", error);
+
+      alert(
+        "Checkout error: " +
+        (error.message || "Unknown error")
+      );
+
+      button.disabled = false;
+      updatePaymentButtonLabel();
     }
+  });
 
-    document.getElementById("reviewContent").innerHTML = `
-      <div class="notice">
-        <strong>Order request sent.</strong><br>
-        Zone6ix has received your details. You will be contacted about payment
-        and whether the custom request can be completed.
-      </div>
-    `;
+function handleStripeReturn() {
+  const parameters = new URLSearchParams(
+    window.location.search
+  );
 
+  const paymentResult = parameters.get("payment");
+
+  if (paymentResult === "success") {
     cart = [];
     currentOrderData = null;
     saveCart();
     renderCart();
 
-    button.textContent = "Order sent";
-  } catch (error) {
-    console.error("Zone6ix order error:", error);
-
-    alert(
-      "Order error: " +
-      (error.message || "Unknown error") +
-      "\n\nCheck that you are using the live pages.dev website."
-    );
-
-    button.disabled = false;
-    button.textContent = "Send order request";
+    setTimeout(() => {
+      alert(
+        "Test payment successful! " +
+        "Your Zone6ix order has been received."
+      );
+    }, 200);
   }
-});
+
+  if (paymentResult === "cancelled") {
+    setTimeout(() => {
+      alert(
+        "Payment was cancelled. " +
+        "Your items are still in the basket."
+      );
+    }, 200);
+  }
+
+  if (paymentResult) {
+    window.history.replaceState(
+      {},
+      document.title,
+      window.location.pathname
+    );
+  }
+}
 
 renderProducts();
 renderCart();
+updatePaymentButtonLabel();
+handleStripeReturn();
