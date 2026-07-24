@@ -488,6 +488,12 @@ document
 
         const checkoutUrl = await createStripeCheckout();
 
+        button.textContent = "Saving order details...";
+
+        await sendOrderEmail(
+          "Awaiting Stripe payment — verify payment in Stripe before starting work"
+        );
+
         window.location.assign(checkoutUrl);
         return;
       }
