@@ -111,6 +111,20 @@ const products = [
   }
 ];
 
+const ROBUX_PRODUCT_IDS = {
+  "small-turf": 3611483762,
+  "medium-turf": 3611483961,
+  "large-turf": 3611484082,
+  "second-floor": 3611484153,
+  "gold-uzi": 3611484215,
+  "gold-draco": 3611484270,
+  "custom-gun": 3611484308,
+  "custom-name": 3611484376,
+  "custom-emoji": 3611484485,
+  "custom-level": 3611484625,
+  "identity-bundle": 3611484757
+};
+
 let cart = JSON.parse(localStorage.getItem("zone6ixCart") || "[]");
 let currentOrderData = null;
 
@@ -362,6 +376,7 @@ async function sendOrderEmail(orderStatus) {
     _replyto: currentOrderData.customerEmail,
     email: currentOrderData.customerEmail,
     "Order Status": orderStatus,
+    "Order Code": currentOrderData.orderCode || "Not created",
     "Roblox Username": currentOrderData.robloxUsername,
     "Gang Name": currentOrderData.gangName,
     "Discord Username": currentOrderData.discordUsername,
@@ -468,6 +483,49 @@ document
   .getElementById("paymentMethod")
   .addEventListener("change", updatePaymentButtonLabel);
 
+function createRobuxOrderCode() {
+  const timePart = Date.now()
+    .toString(36)
+    .toUpperCase();
+
+  const randomValues = new Uint32Array(1);
+  crypto.getRandomValues(randomValues);
+
+  const randomPart = randomValues[0]
+    .toString(36)
+    .toUpperCase()
+    .slice(0, 6)
+    .padStart(6, "0");
+
+  return `Z6-${timePart}-${randomPart}`;
+}
+
+function createRobloxOrderUrl(orderCode) {
+  const productIds = cart.map(item => {
+    return ROBUX_PRODUCT_IDS[item.id];
+  });
+
+  if (
+    productIds.length === 0 ||
+    productIds.some(productId => !productId)
+  ) {
+    throw new Error(
+      "One or more products are missing their Roblox Product ID."
+    );
+  }
+
+  const launchData = JSON.stringify({
+    o: orderCode,
+    p: productIds
+  });
+
+  return (
+    "https://www.roblox.com/games/start" +
+    "?placeId=123342024810939" +
+    `&launchData=${encodeURIComponent(launchData)}`
+  );
+}
+
 document
   .getElementById("paymentButton")
   .addEventListener("click", async () => {
@@ -498,21 +556,35 @@ document
         return;
       }
 
-      button.textContent = "Sending Robux order...";
+      button.textContent = "Creating Robux order...";
 
-      await sendOrderEmail("Awaiting Robux payment");
+      const orderCode = createRobuxOrderCode();
+      const robloxOrderUrl = createRobloxOrderUrl(orderCode);
 
-      showOrderSentMessage(
-        "Your Robux order details have been received. " +
-        "The Robux purchase links will be connected next."
+      currentOrderData.orderCode = orderCode;
+
+      await sendOrderEmail(
+        `Awaiting Robux payment — ${orderCode}`
       );
 
-      cart = [];
-      currentOrderData = null;
-      saveCart();
-      renderCart();
+      localStorage.setItem(
+        "zone6ixLastRobuxOrder",
+        JSON.stringify({
+          orderCode,
+          products: cart.map(item => item.name),
+          productIds: cart.map(item => {
+            return ROBUX_PRODUCT_IDS[item.id];
+          }),
+          robloxUsername: currentOrderData.robloxUsername,
+          gangName: currentOrderData.gangName,
+          createdAt: new Date().toISOString()
+        })
+      );
 
-      button.textContent = "Order sent";
+      button.textContent = "Opening Zone6ix...";
+
+      window.location.assign(robloxOrderUrl);
+      return;
     } catch (error) {
       console.error("Zone6ix payment error:", error);
 
