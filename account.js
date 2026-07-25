@@ -167,9 +167,17 @@ async function signInUser() {
 }
 
 async function getToken(forceRefresh = false) {
-  await ready;
-  if (!currentUser) return null;
-  return currentUser.getIdToken(forceRefresh);
+  // Firebase can restore a saved user before the public `ready` promise has
+  // resolved. Do not wait on that same promise when we already have the user,
+  // otherwise the first account sync after a page refresh can deadlock.
+  let user = currentUser || auth.currentUser;
+  if (!user && !readyResolved) {
+    await ready;
+    user = currentUser || auth.currentUser;
+  }
+  if (!user) return null;
+  currentUser = user;
+  return user.getIdToken(forceRefresh);
 }
 
 async function requireUser() {
@@ -669,11 +677,15 @@ onAuthStateChanged(auth, async user => {
   ownerAllowed = false;
   adminRole = null;
   updateAccountUi();
-  if (user) await syncAccount();
+
+  // Resolve auth restoration immediately. API calls made by syncAccount can
+  // now safely request the restored user's ID token on the first page load.
   if (!readyResolved) {
     readyResolved = true;
     resolveReady(user);
     document.dispatchEvent(new CustomEvent("zone6ix-auth-ready"));
   }
+
+  if (user) await syncAccount();
   document.dispatchEvent(new CustomEvent("zone6ix-auth-change", { detail: { user } }));
 });
