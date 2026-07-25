@@ -1,42 +1,44 @@
 import {
   aggregateProducts,
   errorResponse,
+  hydrateOrders,
   json,
   makeOrderIdentity,
   parseCustomer,
   requireFirebaseUser,
   upsertUser
 } from "../_lib/common.js";
-import { createCheckoutSession } from "../_lib/stripe.js";
 
-async function cleanupOrder(db, orderId) {
+export async function onRequestGet({ request, env }) {
   try {
-    await db.batch([
-      db.prepare("DELETE FROM order_updates WHERE order_id = ?").bind(orderId),
-      db.prepare("DELETE FROM order_items WHERE order_id = ?").bind(orderId),
-      db.prepare("DELETE FROM orders WHERE id = ?").bind(orderId)
-    ]);
+    const user = await requireFirebaseUser(request);
+    const result = await env.DB.prepare(`
+      SELECT * FROM orders
+      WHERE firebase_uid = ?
+      ORDER BY datetime(created_at) DESC
+      LIMIT 100
+    `).bind(user.uid).all();
+    return json({ orders: await hydrateOrders(env.DB, result.results || []) });
   } catch (error) {
-    console.error("Could not clean up failed order:", error);
+    return errorResponse(error);
   }
 }
 
 export async function onRequestPost({ request, env }) {
-  let orderId = "";
-  let stripeSessionCreated = false;
   try {
     const user = await requireFirebaseUser(request);
     const body = await request.json();
+    if (body.paymentMethod !== "robux") throw Object.assign(new Error("This endpoint only creates Robux orders."), { status: 400 });
+
     const customer = parseCustomer(body);
     const products = aggregateProducts(body.productIds);
-    const identity = makeOrderIdentity();
-    orderId = identity.id;
-
+    const { id, orderCode } = makeOrderIdentity();
     const cashTotal = products.reduce((sum, product) => sum + product.cashPence * product.quantity, 0);
     const robuxTotal = products.reduce((sum, product) => sum + product.robux * product.quantity, 0);
+
     await upsertUser(env.DB, user, customer);
 
-    await env.DB.batch([
+    const statements = [
       env.DB.prepare(`
         INSERT INTO orders (
           id, order_code, firebase_uid, customer_email, customer_name,
@@ -44,10 +46,10 @@ export async function onRequestPost({ request, env }) {
           payment_method, payment_status, order_status,
           cash_total_pence, robux_total, custom_request, reference_link,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'card', 'pending', 'awaiting_payment', ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'robux', 'robux_pending', 'awaiting_payment', ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       `).bind(
-        identity.id,
-        identity.orderCode,
+        id,
+        orderCode,
         user.uid,
         user.email,
         user.displayName,
@@ -64,36 +66,17 @@ export async function onRequestPost({ request, env }) {
           order_id, product_id, product_name,
           cash_price_pence, robux_price, quantity
         ) VALUES (?, ?, ?, ?, ?, ?)
-      `).bind(identity.id, product.id, product.name, product.cashPence, product.robux, product.quantity)),
+      `).bind(id, product.id, product.name, product.cashPence, product.robux, product.quantity)),
       env.DB.prepare(`
         INSERT INTO order_updates (
           order_id, status, message, visible_to_customer, created_by_email
-        ) VALUES (?, 'awaiting_payment', 'Order created. Complete Stripe Checkout to confirm payment.', 1, ?)
-      `).bind(identity.id, user.email)
-    ]);
+        ) VALUES (?, 'awaiting_payment', ?, 1, ?)
+      `).bind(id, "Robux order created. Complete the purchase prompts inside Zone6ix.", user.email)
+    ];
 
-    const session = await createCheckoutSession(env.STRIPE_SECRET_KEY, request.url, {
-      order: identity,
-      customer: {
-        uid: user.uid,
-        email: user.email,
-        gangName: customer.gangName,
-        robloxUsername: customer.robloxUsername,
-        discordUsername: customer.discordUsername
-      },
-      products
-    });
-    stripeSessionCreated = true;
-
-    await env.DB.prepare(`
-      UPDATE orders
-      SET stripe_checkout_session_id = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).bind(session.id, identity.id).run();
-
-    return json({ url: session.url, orderCode: identity.orderCode });
+    await env.DB.batch(statements);
+    return json({ orderId: id, orderCode, robuxTotal }, 201);
   } catch (error) {
-    if (orderId && !stripeSessionCreated) await cleanupOrder(env.DB, orderId);
     return errorResponse(error);
   }
 }

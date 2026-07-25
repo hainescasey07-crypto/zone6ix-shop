@@ -1,168 +1,88 @@
-function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store"
-    }
-  });
+import { errorResponse, json } from "../_lib/common.js";
+import { verifyStripeWebhook } from "../_lib/stripe.js";
+
+function paymentIntentId(session) {
+  return typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || "";
 }
 
-function bytesToHex(buffer) {
-  return Array.from(new Uint8Array(buffer))
-    .map(byte => byte.toString(16).padStart(2, "0"))
-    .join("");
+async function findOrder(env, session) {
+  const orderId = session.metadata?.order_id || session.client_reference_id || "";
+  if (orderId) {
+    const byId = await env.DB.prepare("SELECT * FROM orders WHERE id = ?").bind(orderId).first();
+    if (byId) return byId;
+  }
+  if (session.id) {
+    return env.DB.prepare("SELECT * FROM orders WHERE stripe_checkout_session_id = ?").bind(session.id).first();
+  }
+  return null;
 }
 
-function secureCompare(first, second) {
-  if (first.length !== second.length) {
-    return false;
-  }
-
-  let difference = 0;
-
-  for (let index = 0; index < first.length; index += 1) {
-    difference |=
-      first.charCodeAt(index) ^
-      second.charCodeAt(index);
-  }
-
-  return difference === 0;
+async function markPaid(env, order, session) {
+  if (order.payment_status === "paid") return;
+  await env.DB.batch([
+    env.DB.prepare(`
+      UPDATE orders SET
+        payment_status = 'paid',
+        order_status = CASE WHEN order_status = 'awaiting_payment' THEN 'paid' ELSE order_status END,
+        stripe_checkout_session_id = COALESCE(stripe_checkout_session_id, ?),
+        stripe_payment_intent_id = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(session.id || "", paymentIntentId(session), order.id),
+    env.DB.prepare(`
+      INSERT INTO order_updates (
+        order_id, status, message, visible_to_customer, created_by_email
+      ) VALUES (?, 'paid', 'Stripe payment confirmed. Your order is ready for review.', 1, 'stripe')
+    `).bind(order.id)
+  ]);
 }
 
-function parseStripeSignature(header) {
-  let timestamp = null;
-  const signatures = [];
-
-  for (const section of String(header || "").split(",")) {
-    const separator = section.indexOf("=");
-
-    if (separator === -1) {
-      continue;
-    }
-
-    const key = section.slice(0, separator).trim();
-    const value = section.slice(separator + 1).trim();
-
-    if (key === "t") {
-      timestamp = Number(value);
-    }
-
-    if (key === "v1") {
-      signatures.push(value);
-    }
-  }
-
-  return {
-    timestamp,
-    signatures
-  };
+async function markExpired(env, order) {
+  if (["paid", "refunded"].includes(order.payment_status)) return;
+  await env.DB.batch([
+    env.DB.prepare(`
+      UPDATE orders SET payment_status = 'failed', order_status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(order.id),
+    env.DB.prepare(`
+      INSERT INTO order_updates (
+        order_id, status, message, visible_to_customer, created_by_email
+      ) VALUES (?, 'cancelled', 'Stripe Checkout expired before payment was completed.', 1, 'stripe')
+    `).bind(order.id)
+  ]);
 }
 
-async function verifyStripeSignature(
-  rawBody,
-  signatureHeader,
-  webhookSecret
-) {
-  const { timestamp, signatures } =
-    parseStripeSignature(signatureHeader);
-
-  if (!timestamp || signatures.length === 0) {
-    return false;
-  }
-
-  const currentTime = Math.floor(Date.now() / 1000);
-
-  if (Math.abs(currentTime - timestamp) > 300) {
-    return false;
-  }
-
-  const encoder = new TextEncoder();
-
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(webhookSecret),
-    {
-      name: "HMAC",
-      hash: "SHA-256"
-    },
-    false,
-    ["sign"]
-  );
-
-  const expectedSignature = bytesToHex(
-    await crypto.subtle.sign(
-      "HMAC",
-      key,
-      encoder.encode(`${timestamp}.${rawBody}`)
-    )
-  );
-
-  return signatures.some(signature =>
-    secureCompare(signature, expectedSignature)
-  );
-}
-
-export async function onRequestPost(context) {
-  const { request, env } = context;
-
-  if (!env.STRIPE_WEBHOOK_SECRET) {
-    return jsonResponse(
-      { error: "Stripe webhook secret is missing." },
-      500
-    );
-  }
-
-  const rawBody = await request.text();
-  const stripeSignature =
-    request.headers.get("Stripe-Signature");
-
-  const signatureIsValid =
-    await verifyStripeSignature(
+export async function onRequestPost({ request, env }) {
+  try {
+    const rawBody = await request.text();
+    const event = await verifyStripeWebhook(
       rawBody,
-      stripeSignature,
+      request.headers.get("stripe-signature"),
       env.STRIPE_WEBHOOK_SECRET
     );
 
-  if (!signatureIsValid) {
-    return jsonResponse(
-      { error: "Invalid Stripe signature." },
-      400
-    );
+    const supported = new Set([
+      "checkout.session.completed",
+      "checkout.session.async_payment_succeeded",
+      "checkout.session.expired"
+    ]);
+    if (!supported.has(event.type)) return json({ received: true, ignored: true });
+
+    const session = event.data?.object || {};
+    const order = await findOrder(env, session);
+    if (!order) {
+      console.warn("Stripe event has no matching Zone6ix order:", event.id, session.id);
+      return json({ received: true, orderFound: false });
+    }
+
+    if (["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type) && session.payment_status === "paid") {
+      await markPaid(env, order, session);
+    } else if (event.type === "checkout.session.expired") {
+      await markExpired(env, order);
+    }
+
+    return json({ received: true });
+  } catch (error) {
+    return errorResponse(error);
   }
-
-  let event;
-
-  try {
-    event = JSON.parse(rawBody);
-  } catch {
-    return jsonResponse(
-      { error: "Invalid JSON." },
-      400
-    );
-  }
-
-  if (event.type === "checkout.session.completed") {
-    const session = event.data?.object;
-
-    console.log("Verified Zone6ix payment event", {
-      eventId: event.id,
-      sessionId: session?.id,
-      paymentStatus: session?.payment_status,
-      gangName: session?.metadata?.gang_name,
-      robloxUsername:
-        session?.metadata?.roblox_username
-    });
-  }
-
-  return jsonResponse({
-    received: true
-  });
-}
-
-export function onRequestGet() {
-  return jsonResponse(
-    { error: "Stripe webhooks use POST requests." },
-    405
-  );
 }
