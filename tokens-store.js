@@ -809,23 +809,25 @@ async function deleteStoreItem() {
   if (!selectedStoreItemId) return;
   const item = storeAdminItems.find(entry => entry.id === selectedStoreItemId);
   const itemName = item?.name || "this item";
-  const firstCheck = confirm(`Permanently delete ${itemName}? This cannot be undone.`);
-  if (!firstCheck) return;
-  const typed = prompt(`Type DELETE to permanently remove ${itemName}.`);
-  if (typed !== "DELETE") return;
+  const historyCount = Number(item?.redemptionCount || 0);
+  const historyText = historyCount > 0
+    ? ` It will also remove ${historyCount} redemption record${historyCount === 1 ? "" : "s"} and automatically return unrefunded tokens.`
+    : "";
+  if (!confirm(`Permanently delete ${itemName}?${historyText} This cannot be undone.`)) return;
 
   const message = document.getElementById("storeSaveMessage");
   const button = document.getElementById("deleteStoreItem");
   if (button) button.disabled = true;
   try {
-    message.textContent = "Deleting item…";
+    message.textContent = "Deleting item and related history…";
     await authApi.apiFetch(`/api/admin-store?itemId=${encodeURIComponent(selectedStoreItemId)}&mode=permanent`, { method: "DELETE" });
     selectedStoreItemId = null;
     selectedStoreImage = null;
     storeAdminItems = [];
+    adminRedemptions = [];
     el.storeItemEditor.innerHTML = storeItemForm(null);
     bindStoreForm();
-    await Promise.all([loadAdminStoreItems(true), loadStoreItems()]);
+    await Promise.all([loadAdminStoreItems(true), loadStoreItems(), loadAdminRedemptions(true), loadWallet({ silent: true })]);
   } catch (error) {
     message.textContent = error.message;
     if (button) button.disabled = false;
@@ -889,8 +891,9 @@ function selectAdminRedemption(id) {
     <label class="admin-editor-field"><span>Redemption status</span><select id="redemptionEditorStatus">${["pending","approved","in_progress","delivered","cancelled","refunded"].map(status => `<option value="${status}" ${item.status === status ? "selected" : ""}>${redemptionStatus(status)}</option>`).join("")}</select></label>
     <label class="admin-editor-field"><span>Customer-visible update</span><textarea id="redemptionCustomerUpdate">${escapeHtml(item.customer_update || "")}</textarea></label>
     <label class="admin-editor-field"><span>Private admin note</span><textarea id="redemptionPrivateNote">${escapeHtml(item.admin_private_note || "")}</textarea></label>
-    <div class="admin-save-row"><button class="dashboard-primary" id="saveRedemptionUpdate" type="button">Save redemption</button><span id="redemptionSaveMessage"></span></div>`;
+    <div class="admin-save-row"><button class="dashboard-primary" id="saveRedemptionUpdate" type="button">Save redemption</button><button class="dashboard-delete" id="deleteRedemption" type="button">Delete redemption permanently</button><span id="redemptionSaveMessage"></span></div>`;
   document.getElementById("saveRedemptionUpdate").addEventListener("click", saveRedemptionUpdate);
+  document.getElementById("deleteRedemption").addEventListener("click", deleteAdminRedemption);
 }
 
 async function saveRedemptionUpdate() {
@@ -918,6 +921,35 @@ async function saveRedemptionUpdate() {
     message.textContent = error.message;
   } finally {
     button.disabled = false;
+  }
+}
+
+async function deleteAdminRedemption() {
+  if (!selectedRedemptionId) return;
+  const redemption = adminRedemptions.find(item => item.id === selectedRedemptionId);
+  if (!redemption) return;
+  const refundText = redemption.status === "refunded"
+    ? "Its tokens were already refunded."
+    : "Its token cost will be returned automatically and the item stock will be restored.";
+  if (!confirm(`Permanently delete redemption ${redemption.redemption_code}? ${refundText}`)) return;
+
+  const button = document.getElementById("deleteRedemption");
+  const message = document.getElementById("redemptionSaveMessage");
+  if (button) button.disabled = true;
+  if (message) message.textContent = "Deleting redemption…";
+  try {
+    await authApi.apiFetch(`/api/admin-redemptions?redemptionId=${encodeURIComponent(selectedRedemptionId)}`, {
+      method: "DELETE"
+    });
+    adminRedemptions = adminRedemptions.filter(item => item.id !== selectedRedemptionId);
+    selectedRedemptionId = null;
+    renderAdminRedemptions();
+    el.redemptionEditor.innerHTML = `<div class="admin-editor-empty"><svg viewBox="0 0 64 64"><path d="M12 10h40v44H12z"/><path d="M20 21h24M20 31h24M20 41h15"/></svg><strong>Redemption deleted</strong><span>Select another redemption to manage it.</span></div>`;
+    storeAdminItems = [];
+    await Promise.all([loadAdminStoreItems(true), loadStoreItems(), loadWallet({ silent: true })]);
+  } catch (error) {
+    if (message) message.textContent = error.message;
+    if (button) button.disabled = false;
   }
 }
 

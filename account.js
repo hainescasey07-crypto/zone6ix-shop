@@ -527,9 +527,11 @@ function selectAdminOrder(orderId) {
 
     <div class="admin-save-row">
       <button class="dashboard-primary" id="saveAdminOrder" type="button">Save order update</button>
+      <button class="dashboard-delete" id="deleteAdminOrder" type="button">Delete order permanently</button>
       <span class="admin-save-message" id="adminSaveMessage"></span>
     </div>`;
   document.getElementById("saveAdminOrder").addEventListener("click", saveAdminOrder);
+  document.getElementById("deleteAdminOrder").addEventListener("click", deleteAdminOrder);
 }
 
 async function saveAdminOrder() {
@@ -559,6 +561,37 @@ async function saveAdminOrder() {
     message.textContent = error.message;
   } finally {
     button.disabled = false;
+  }
+}
+
+async function deleteAdminOrder() {
+  if (!selectedAdminOrderId) return;
+  const order = adminOrders.find(item => item.id === selectedAdminOrderId);
+  if (!order) return;
+  const confirmed = confirm(`Permanently delete order ${order.order_code}? This removes it from Admin and the customer's My Orders history.`);
+  if (!confirmed) return;
+
+  const button = document.getElementById("deleteAdminOrder");
+  const message = document.getElementById("adminSaveMessage");
+  if (button) button.disabled = true;
+  if (message) message.textContent = "Deleting order…";
+
+  try {
+    await apiFetch(`/api/admin-orders?orderId=${encodeURIComponent(selectedAdminOrderId)}`, {
+      method: "DELETE"
+    });
+    adminOrders = adminOrders.filter(item => item.id !== selectedAdminOrderId);
+    selectedAdminOrderId = null;
+    renderAdminStats();
+    renderAdminOrderList();
+    elements.adminEditor.innerHTML = `<div class="admin-editor-empty">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 10h40v44H12z"/><path d="M20 21h24M20 31h24M20 41h15"/></svg>
+      <strong>Order deleted</strong><span>Select another order to manage it.</span>
+    </div>`;
+    if (elements.ordersDashboard?.classList.contains("open")) await loadOrders();
+  } catch (error) {
+    if (message) message.textContent = error.message;
+    if (button) button.disabled = false;
   }
 }
 

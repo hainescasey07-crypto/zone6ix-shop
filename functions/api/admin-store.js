@@ -134,18 +134,61 @@ export async function onRequestDelete({ request, env }) {
     if (!existing) throw Object.assign(new Error("Store item not found."), { status: 404 });
 
     if (mode === "permanent") {
-      const history = await env.DB.prepare(`
-        SELECT COUNT(*) AS count FROM store_redemptions WHERE item_id = ?
-      `).bind(itemId).first();
-      if (Number(history?.count || 0) > 0) {
-        throw Object.assign(new Error("This item has redemption history, so it cannot be permanently deleted. Archive it instead."), { status: 409 });
+      const redemptionsResult = await env.DB.prepare(`
+        SELECT firebase_uid,
+               SUM(CASE WHEN status <> 'refunded' THEN total_price_milli ELSE 0 END) AS refund_milli,
+               COUNT(*) AS redemption_count
+        FROM store_redemptions
+        WHERE item_id = ?
+        GROUP BY firebase_uid
+      `).bind(itemId).all();
+
+      let redemptionCount = 0;
+      let refundedMilli = 0;
+
+      // Refund in small idempotent batches so deleting a popular item does not
+      // hit D1's batch-size limits. A retry cannot award the refund twice.
+      for (const row of redemptionsResult.results || []) {
+        redemptionCount += Number(row.redemption_count || 0);
+        const amount = Math.max(0, Number(row.refund_milli || 0));
+        if (amount <= 0) continue;
+        refundedMilli += amount;
+        const key = `item-delete-refund:${itemId}:${row.firebase_uid}`;
+        await env.DB.batch([
+          env.DB.prepare(`
+            UPDATE token_wallets SET
+              balance_milli = balance_milli + ?,
+              lifetime_spent_milli = MAX(0, lifetime_spent_milli - ?),
+              updated_at = CURRENT_TIMESTAMP
+            WHERE firebase_uid = ?
+              AND NOT EXISTS (SELECT 1 FROM token_ledger WHERE idempotency_key = ?)
+          `).bind(amount, amount, row.firebase_uid, key),
+          env.DB.prepare(`
+            INSERT OR IGNORE INTO token_ledger (
+              firebase_uid, amount_milli, balance_after_milli,
+              reason, reference_type, reference_id, note,
+              idempotency_key, created_at, created_by_email
+            )
+            SELECT ?, ?, balance_milli, 'item_deleted_refund', 'store_item', ?, ?, ?, CURRENT_TIMESTAMP, ?
+            FROM token_wallets WHERE firebase_uid = ?
+          `).bind(
+            row.firebase_uid,
+            amount,
+            itemId,
+            `Automatic refund because ${existing.name} was permanently deleted`,
+            key,
+            admin.email,
+            row.firebase_uid
+          )
+        ]);
       }
 
       await env.DB.batch([
+        env.DB.prepare("DELETE FROM store_redemptions WHERE item_id = ?").bind(itemId),
         env.DB.prepare("DELETE FROM store_item_images WHERE item_id = ?").bind(itemId),
         env.DB.prepare("DELETE FROM store_items WHERE id = ?").bind(itemId)
       ]);
-      return json({ deleted: true, itemId });
+      return json({ deleted: true, itemId, redemptionCount, refundedMilli });
     }
 
     await env.DB.prepare(`

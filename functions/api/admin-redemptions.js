@@ -103,3 +103,79 @@ export async function onRequestPatch({ request, env }) {
     return errorResponse(error);
   }
 }
+
+export async function onRequestDelete({ request, env }) {
+  try {
+    const admin = await requireAdmin(request, env.DB);
+    const url = new URL(request.url);
+    const redemptionId = cleanText(url.searchParams.get("redemptionId"), {
+      name: "Redemption ID",
+      min: 1,
+      max: 100,
+      required: true
+    });
+    const existing = await getRedemption(env.DB, redemptionId);
+    if (!existing) throw Object.assign(new Error("Redemption not found."), { status: 404 });
+
+    const statements = [];
+    const shouldRefund = existing.status !== "refunded";
+    const amount = shouldRefund ? Math.max(0, Number(existing.total_price_milli || 0)) : 0;
+    const quantity = Math.max(1, Number(existing.quantity || 1));
+    const key = `redemption-delete-refund:${redemptionId}`;
+
+    if (amount > 0) {
+      statements.push(
+        env.DB.prepare(`
+          UPDATE token_wallets SET
+            balance_milli = balance_milli + ?,
+            lifetime_spent_milli = MAX(0, lifetime_spent_milli - ?),
+            updated_at = CURRENT_TIMESTAMP
+          WHERE firebase_uid = ?
+            AND NOT EXISTS (SELECT 1 FROM token_ledger WHERE idempotency_key = ?)
+        `).bind(amount, amount, existing.firebase_uid, key),
+        env.DB.prepare(`
+          INSERT OR IGNORE INTO token_ledger (
+            firebase_uid, amount_milli, balance_after_milli,
+            reason, reference_type, reference_id, note,
+            idempotency_key, created_at, created_by_email
+          )
+          SELECT ?, ?, balance_milli, 'redemption_deleted_refund', 'redemption', ?, ?, ?, CURRENT_TIMESTAMP, ?
+          FROM token_wallets WHERE firebase_uid = ?
+        `).bind(
+          existing.firebase_uid,
+          amount,
+          redemptionId,
+          `Automatic refund because redemption ${existing.redemption_code} was permanently deleted`,
+          key,
+          admin.email,
+          existing.firebase_uid
+        )
+      );
+    }
+
+    statements.push(
+      env.DB.prepare(`
+        UPDATE store_items SET
+          stock_remaining = CASE
+            WHEN stock_remaining IS NULL THEN NULL
+            WHEN stock_total IS NULL THEN stock_remaining + ?
+            ELSE MIN(stock_total, stock_remaining + ?)
+          END,
+          status = CASE WHEN status = 'sold_out' THEN 'live' ELSE status END,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).bind(quantity, quantity, existing.item_id),
+      env.DB.prepare("DELETE FROM store_redemptions WHERE id = ?").bind(redemptionId)
+    );
+
+    await env.DB.batch(statements);
+    return json({
+      deleted: true,
+      redemptionId,
+      refundedMilli: amount,
+      restoredStock: quantity
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}

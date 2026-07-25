@@ -85,3 +85,38 @@ export async function onRequestPatch({ request, env }) {
     return errorResponse(error);
   }
 }
+
+
+export async function onRequestDelete({ request, env }) {
+  try {
+    await requireAdmin(request, env.DB);
+    const url = new URL(request.url);
+    const orderId = cleanText(url.searchParams.get("orderId"), {
+      name: "Order ID",
+      min: 1,
+      max: 100,
+      required: true
+    });
+
+    const existing = await env.DB.prepare(`
+      SELECT id, order_code FROM orders WHERE id = ?
+    `).bind(orderId).first();
+    if (!existing) {
+      throw Object.assign(new Error("Order not found."), { status: 404 });
+    }
+
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM order_updates WHERE order_id = ?").bind(orderId),
+      env.DB.prepare("DELETE FROM order_items WHERE order_id = ?").bind(orderId),
+      env.DB.prepare("DELETE FROM orders WHERE id = ?").bind(orderId)
+    ]);
+
+    return json({
+      deleted: true,
+      orderId,
+      orderCode: existing.order_code
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
