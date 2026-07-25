@@ -1,5 +1,6 @@
 import { errorResponse, json } from "../_lib/common.js";
 import { verifyStripeWebhook } from "../_lib/stripe.js";
+import { awardPurchaseBonus } from "../_lib/tokens.js";
 
 function paymentIntentId(session) {
   return typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || "";
@@ -35,6 +36,7 @@ async function markPaid(env, order, session) {
       ) VALUES (?, 'paid', 'Stripe payment confirmed. Your order is ready for review.', 1, 'stripe')
     `).bind(order.id)
   ]);
+  await awardPurchaseBonus(env.DB, order, "stripe");
 }
 
 async function markExpired(env, order) {

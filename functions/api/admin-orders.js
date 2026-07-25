@@ -6,6 +6,7 @@ import {
   json,
   requireFirebaseUser
 } from "../_lib/common.js";
+import { awardPurchaseBonus } from "../_lib/tokens.js";
 
 const ORDER_STATUSES = new Set(["awaiting_payment", "paid", "reviewing", "in_progress", "ready", "completed", "cancelled"]);
 const PAYMENT_STATUSES = new Set(["unpaid", "pending", "paid", "failed", "refunded", "robux_pending", "robux_verified"]);
@@ -72,6 +73,9 @@ export async function onRequestPatch({ request, env }) {
     }
 
     await env.DB.batch(statements);
+    if (["paid", "robux_verified"].includes(paymentStatus) && !["paid", "robux_verified"].includes(existing.payment_status)) {
+      await awardPurchaseBonus(env.DB, existing, admin.email);
+    }
     const row = await env.DB.prepare(`
       SELECT o.*, u.photo_url AS account_photo_url, u.display_name AS account_display_name
       FROM orders o

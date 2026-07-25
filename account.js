@@ -125,22 +125,24 @@ function toggleAccountMenu() {
 }
 
 function closeDashboards() {
-  elements.ordersDashboard?.classList.remove("open");
-  elements.ordersDashboard?.setAttribute("aria-hidden", "true");
-  elements.adminDashboard?.classList.remove("open");
-  elements.adminDashboard?.setAttribute("aria-hidden", "true");
+  document.querySelectorAll(".dashboard-modal.open").forEach(modal => {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+  });
   elements.dashboardBackdrop?.classList.remove("visible");
   elements.dashboardBackdrop?.setAttribute("aria-hidden", "true");
   document.body.classList.remove("locked");
+  document.dispatchEvent(new CustomEvent("zone6ix-dashboards-closed"));
 }
 
 function openDashboard(target) {
+  if (!target) return;
   closeAccountMenu();
   closeDashboards();
   target.classList.add("open");
   target.setAttribute("aria-hidden", "false");
-  elements.dashboardBackdrop.classList.add("visible");
-  elements.dashboardBackdrop.setAttribute("aria-hidden", "false");
+  elements.dashboardBackdrop?.classList.add("visible");
+  elements.dashboardBackdrop?.setAttribute("aria-hidden", "false");
   document.body.classList.add("locked");
 }
 
@@ -183,7 +185,7 @@ async function apiFetch(url, options = {}) {
   const headers = new Headers(options.headers || {});
   headers.set("Authorization", `Bearer ${token}`);
   headers.set("Accept", "application/json");
-  if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
   let response = await fetch(url, { ...options, headers });
   if (response.status === 401 && currentUser) {
@@ -636,7 +638,11 @@ window.zone6ixAuth = {
   openMyOrders: openOrdersDashboard,
   refreshOrders: loadOrders,
   isAdmin: () => adminAllowed,
-  openAdmin: openAdminDashboard
+  openAdmin: openAdminDashboard,
+  openDashboard,
+  closeDashboards,
+  closeAccountMenu,
+  syncAccount
 };
 
 document.dispatchEvent(new CustomEvent("zone6ix-auth-module"));

@@ -33,6 +33,7 @@
       <a href="#turfs">Turfs</a>
       <a href="#guns">Weapons</a>
       <a href="#identity">Identity</a>
+      <a href="#event-store">Event Store</a>
       <a href="#process">Process</a>
     </nav>
 
@@ -48,6 +49,11 @@
           <button type="button" data-language="es" role="menuitemradio" aria-checked="false"><span>ES</span><strong>Español</strong><i></i></button>
         </div>
       </div>
+      <button class="token-wallet-trigger" id="tokenWalletButton" type="button" hidden aria-label="Open Zone Token wallet">
+        <span class="token-wallet-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/><path d="m8.5 9 7-3-4 5h4l-7 6 3-5h-4l1-3Z"/></svg></span>
+        <span><small id="tokenWalletSymbol">ZT</small><strong id="tokenWalletBalance">0</strong></span>
+        <i id="tokenEarningDot"></i>
+      </button>
       <div class="account-control">
         <button class="account-trigger" id="accountButton" type="button" aria-haspopup="menu" aria-expanded="false">
           <span class="account-avatar" id="accountAvatar" aria-hidden="true">
@@ -65,6 +71,14 @@
             <span class="account-menu-avatar" id="accountMenuAvatar"></span>
             <div><strong id="accountMenuName">Not signed in</strong><small id="accountMenuEmail">Sign in to save orders</small></div>
           </div>
+          <button type="button" id="walletMenuButton" role="menuitem" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v13H4z"/><path d="M4 9h16M15 13h5v4h-5z"/></svg>
+            <span>Zone Token wallet</span>
+          </button>
+          <button type="button" id="eventStoreMenuButton" role="menuitem">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v12H4zM3 4h18l-1 4H4L3 4Z"/><path d="M9 12h6v8H9z"/></svg>
+            <span>Event Store</span>
+          </button>
           <button type="button" id="myOrdersButton" role="menuitem">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
             <span>My orders</span>
@@ -311,6 +325,34 @@
       <div class="product-grid identity-grid" id="identityProducts"></div>
     </section>
 
+    <section class="event-store-section section-shell" id="event-store">
+      <div class="event-store-head reveal">
+        <div>
+          <div class="section-kicker"><span>LIVE DROPS</span><i></i></div>
+          <h2>THE ZONE6IX <em>EVENT STORE.</em></h2>
+          <p>Stay active, earn Zone Tokens and unlock limited items released directly by the Zone6ix team.</p>
+        </div>
+        <div class="event-wallet-preview" id="eventWalletPreview">
+          <span class="event-wallet-icon"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/><path d="m8.5 9 7-3-4 5h4l-7 6 3-5h-4l1-3Z"/></svg></span>
+          <div><small>YOUR BALANCE</small><strong id="eventWalletBalance">Sign in to earn</strong></div>
+          <button type="button" id="eventWalletOpen">Open wallet</button>
+        </div>
+      </div>
+
+      <div class="earning-strip reveal" data-delay="80">
+        <article><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><small>ACTIVE TIME</small><strong id="earningRateLabel">0.5 ZT every active minute</strong></div></article>
+        <article><span><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 3v4M16 3v4M4 9h16"/></svg></span><div><small>DAILY REWARD</small><strong id="dailyBonusLabel">10 ZT when you return</strong></div></article>
+        <article><span><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg></span><div><small>PURCHASE BONUS</small><strong id="purchaseBonusLabel">25 ZT after a paid order</strong></div></article>
+        <article><span><svg viewBox="0 0 24 24"><path d="M12 3 5 7v5c0 4.5 2.7 7.9 7 9 4.3-1.1 7-4.5 7-9V7l-7-4Z"/><path d="m9 12 2 2 4-5"/></svg></span><div><small>SECURE WALLET</small><strong>Saved to your Google account</strong></div></article>
+      </div>
+
+      <p class="token-terms"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg>Zone Tokens are free rewards with no cash value. They cannot be transferred or exchanged for money.</p>
+      <div class="store-state" id="storeState">
+        <div class="store-loading"><i></i><span>Loading live drops…</span></div>
+      </div>
+      <div class="event-store-grid" id="eventStoreGrid"></div>
+    </section>
+
     <section class="process-section section-shell" id="process">
       <div class="section-top reveal">
         <div>
@@ -516,6 +558,18 @@
   </div>
 
 
+  <div class="redeem-backdrop" id="redeemBackdrop" aria-hidden="true"></div>
+  <section class="redeem-modal" id="redeemModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="redeemModalTitle">
+    <button class="icon-button redeem-close" id="closeRedeemModal" type="button" aria-label="Close redemption"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    <div class="redeem-item-preview" id="redeemItemPreview"></div>
+    <div class="redeem-modal-copy"><small>ZONE TOKEN REDEMPTION</small><h2 id="redeemModalTitle">Confirm your item</h2><p id="redeemModalDescription"></p></div>
+    <label class="redeem-field"><span>Roblox username for delivery</span><input id="redeemRobloxUsername" maxlength="50" autocomplete="off" placeholder="Your Roblox username"></label>
+    <label class="redeem-field" id="redeemQuantityField"><span>Quantity</span><input id="redeemQuantity" type="number" min="1" max="1" value="1"></label>
+    <div class="redeem-cost-line"><span>Total</span><strong id="redeemTotalCost">0 ZT</strong></div>
+    <button class="submit-order neon-edge" id="confirmRedeemButton" type="button"><span>Redeem item</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <small class="redeem-message" id="redeemMessage"></small>
+  </section>
+
   <div class="dashboard-backdrop" id="dashboardBackdrop" aria-hidden="true"></div>
 
   <section class="dashboard-modal customer-dashboard" id="ordersDashboard" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="ordersDashboardTitle">
@@ -557,6 +611,49 @@
     </div>
   </section>
 
+  <section class="dashboard-modal token-dashboard" id="tokenDashboard" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="tokenDashboardTitle">
+    <header class="dashboard-header token-dashboard-header">
+      <div>
+        <small>ZONE6IX REWARDS</small>
+        <h2 id="tokenDashboardTitle">Zone Token wallet</h2>
+      </div>
+      <div class="dashboard-header-actions">
+        <button class="dashboard-refresh" id="refreshTokenWallet" type="button"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>Refresh</button>
+        <button class="icon-button" id="closeTokenDashboard" type="button" aria-label="Close Zone Token wallet"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+      </div>
+    </header>
+
+    <div class="token-dashboard-body">
+      <section class="wallet-hero-panel">
+        <div class="wallet-balance-block">
+          <span class="wallet-large-mark"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/><path d="m8.5 9 7-3-4 5h4l-7 6 3-5h-4l1-3Z"/></svg></span>
+          <div><small>AVAILABLE BALANCE</small><strong id="walletLargeBalance">0 ZT</strong><span id="walletLifetimeText">0 earned · 0 spent</span></div>
+        </div>
+        <div class="earning-status-card" id="earningStatusCard">
+          <div class="earning-status-top"><span><i></i>ACTIVE EARNING</span><strong id="earningStatusText">Waiting for sign-in</strong></div>
+          <div class="earning-progress"><span id="earningProgressBar"></span></div>
+          <div class="earning-status-bottom"><small id="earningTodayText">0 active minutes today</small><small id="earningLimitText">Daily limit: 120 min</small></div>
+        </div>
+      </section>
+
+      <div class="wallet-tabs" role="tablist">
+        <button class="active" type="button" data-wallet-tab="activity">Token activity</button>
+        <button type="button" data-wallet-tab="redemptions">My redemptions</button>
+        <button type="button" data-wallet-tab="how">How to earn</button>
+      </div>
+      <div class="wallet-tab-panel active" id="walletActivityPanel"><div class="dashboard-loading"><i></i><span>Loading token activity…</span></div></div>
+      <div class="wallet-tab-panel" id="walletRedemptionsPanel"></div>
+      <div class="wallet-tab-panel" id="walletHowPanel">
+        <div class="wallet-how-grid">
+          <article><span>01</span><div><strong>Stay genuinely active</strong><p>Tokens count while this tab is visible and you are using the site. Leaving it idle pauses earning.</p></div></article>
+          <article><span>02</span><div><strong>Return each day</strong><p>Your daily login bonus is added once per day when you open your wallet.</p></div></article>
+          <article><span>03</span><div><strong>Complete purchases</strong><p>Paid Stripe orders and verified Robux orders receive the configured purchase bonus.</p></div></article>
+          <article><span>04</span><div><strong>Redeem limited drops</strong><p>Spend tokens in the Event Store. Redemptions are saved to this account and tracked by the admin.</p></div></article>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="dashboard-modal admin-dashboard" id="adminDashboard" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="adminDashboardTitle">
     <header class="dashboard-header admin-header">
       <div>
@@ -572,6 +669,15 @@
       </div>
     </header>
 
+    <nav class="admin-section-tabs" id="adminSectionTabs" aria-label="Admin sections">
+      <button class="active" type="button" data-admin-tab="orders"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg><span>Orders</span></button>
+      <button type="button" data-admin-tab="store"><svg viewBox="0 0 24 24"><path d="M4 8h16v12H4zM3 4h18l-1 4H4L3 4Z"/></svg><span>Event Store</span></button>
+      <button type="button" data-admin-tab="redemptions"><svg viewBox="0 0 24 24"><path d="M4 6h16v14H4zM8 3v6M16 3v6M4 10h16"/></svg><span>Redemptions</span></button>
+      <button type="button" data-admin-tab="tokens"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/></svg><span>Token settings</span></button>
+      <button type="button" data-admin-tab="customers"><svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm10-1a3 3 0 1 0 0-6M2 21a7 7 0 0 1 14 0m1-7a5 5 0 0 1 5 5"/></svg><span>Customers</span></button>
+    </nav>
+
+    <div class="admin-tab-panel active" id="adminPanelOrders" data-admin-panel="orders">
     <div class="admin-stats" id="adminStats"></div>
 
     <div class="admin-toolbar">
@@ -604,10 +710,38 @@
         </div>
       </aside>
     </div>
+    </div>
+
+    <div class="admin-tab-panel" id="adminPanelStore" data-admin-panel="store">
+      <div class="store-admin-layout">
+        <section class="store-admin-list-panel">
+          <div class="admin-panel-head"><div><small>LIVE INVENTORY</small><h3>Event Store items</h3></div><button class="dashboard-primary compact" id="createStoreItemButton" type="button">Create item</button></div>
+          <div class="store-admin-filters"><input id="storeAdminSearch" type="search" placeholder="Search store items"><select id="storeAdminStatus"><option value="all">All statuses</option><option value="live">Live</option><option value="scheduled">Scheduled</option><option value="draft">Draft</option><option value="hidden">Hidden</option><option value="sold_out">Sold out</option><option value="archived">Archived</option></select></div>
+          <div class="store-admin-list" id="storeAdminList"><div class="dashboard-loading"><i></i><span>Loading store items…</span></div></div>
+        </section>
+        <aside class="store-item-editor" id="storeItemEditor"><div class="admin-editor-empty"><svg viewBox="0 0 64 64"><path d="M8 18h48v36H8zM5 10h54l-3 8H8l-3-8Z"/><path d="M24 30h16v24H24z"/></svg><strong>Select or create an item</strong><span>Edit the price, stock, dates, image and delivery settings without touching GitHub.</span></div></aside>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel" id="adminPanelRedemptions" data-admin-panel="redemptions">
+      <div class="redemption-admin-layout">
+        <section><div class="admin-panel-head"><div><small>EVENT FULFILMENT</small><h3>Store redemptions</h3></div><button class="dashboard-refresh" id="refreshRedemptions" type="button">Refresh</button></div><div class="store-admin-filters"><input id="redemptionSearch" type="search" placeholder="Search code, item, email or Roblox"><select id="redemptionStatusFilter"><option value="all">All statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="in_progress">In progress</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option><option value="refunded">Refunded</option></select></div><div class="redemption-admin-list" id="redemptionAdminList"><div class="dashboard-loading"><i></i><span>Loading redemptions…</span></div></div></section>
+        <aside class="redemption-editor" id="redemptionEditor"><div class="admin-editor-empty"><svg viewBox="0 0 64 64"><path d="M12 10h40v44H12z"/><path d="M20 21h24M20 31h24M20 41h15"/></svg><strong>Select a redemption</strong><span>Update delivery progress and customer messages here.</span></div></aside>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel" id="adminPanelTokens" data-admin-panel="tokens">
+      <div class="token-settings-layout"><section class="token-settings-card"><div class="admin-panel-head"><div><small>REWARD ECONOMY</small><h3>Zone Token settings</h3></div><span class="settings-live-badge"><i></i>Updates live instantly</span></div><form id="tokenSettingsForm" class="token-settings-form"><div class="admin-form-grid"><label><span>Token name</span><input id="settingTokenName" maxlength="40" required></label><label><span>Symbol</span><input id="settingTokenSymbol" maxlength="8" required></label><label><span>Tokens per active minute</span><input id="settingEarnRate" type="number" min="0" step="0.001" required></label><label><span>Daily active-minute limit</span><input id="settingDailyLimit" type="number" min="0" max="1440" step="1" required></label><label><span>Daily login bonus</span><input id="settingDailyBonus" type="number" min="0" step="0.001" required></label><label><span>Paid purchase bonus</span><input id="settingPurchaseBonus" type="number" min="0" step="0.001" required></label></div><label class="admin-toggle"><input id="settingEarningEnabled" type="checkbox"><span></span><div><strong>Active-time earning enabled</strong><small>Turn this off to pause all new active-time rewards.</small></div></label><div class="admin-save-row"><button class="dashboard-primary" type="submit">Save token settings</button><span id="tokenSettingsMessage"></span></div></form></section><aside class="economy-preview"><small>LIVE PREVIEW</small><strong id="economyPreviewRate">0.5 ZT / minute</strong><p id="economyPreviewDaily">Up to 60 ZT from active time each day</p><div><span>Daily login</span><b id="economyPreviewLogin">10 ZT</b></div><div><span>Paid order</span><b id="economyPreviewPurchase">25 ZT</b></div></aside></div>
+    </div>
+
+    <div class="admin-tab-panel" id="adminPanelCustomers" data-admin-panel="customers">
+      <div class="customers-admin-panel"><div class="admin-panel-head"><div><small>ACCOUNT MANAGEMENT</small><h3>Customers and wallets</h3></div><button class="dashboard-refresh" id="refreshCustomers" type="button">Refresh</button></div><div class="store-admin-filters"><input id="customerSearch" type="search" placeholder="Search name, email, Roblox, Discord or gang"></div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>Roblox / Gang</th><th>Balance</th><th>Orders</th><th>Redemptions</th><th>Adjust</th></tr></thead><tbody id="customerTableBody"><tr><td colspan="6"><div class="dashboard-loading"><i></i><span>Loading customers…</span></div></td></tr></tbody></table></div></div>
+    </div>
   </section>
 
-  <script src="language.js?v=language-1"></script>
-  <script type="module" src="account.js?v=language-1"></script>
-  <script src="script.js?v=language-1"></script>
+  <script src="language.js?v=rewards-1"></script>
+  <script type="module" src="account.js?v=rewards-1"></script>
+  <script type="module" src="tokens-store.js?v=rewards-1"></script>
+  <script src="script.js?v=rewards-1"></script>
 </body>
 </html>
