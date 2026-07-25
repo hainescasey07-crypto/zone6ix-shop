@@ -37,6 +37,17 @@
     </nav>
 
     <div class="header-actions">
+      <div class="language-control">
+        <button class="language-trigger" id="languageButton" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Change language">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z"/></svg>
+          <span id="languageCurrent">EN</span>
+          <svg class="language-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+        </button>
+        <div class="language-menu" id="languageMenu" role="menu" aria-hidden="true">
+          <button type="button" data-language="en" role="menuitemradio" aria-checked="true"><span>EN</span><strong>English</strong><i></i></button>
+          <button type="button" data-language="es" role="menuitemradio" aria-checked="false"><span>ES</span><strong>Español</strong><i></i></button>
+        </div>
+      </div>
       <div class="account-control">
         <button class="account-trigger" id="accountButton" type="button" aria-haspopup="menu" aria-expanded="false">
           <span class="account-avatar" id="accountAvatar" aria-hidden="true">
@@ -595,7 +606,8 @@
     </div>
   </section>
 
-  <script type="module" src="account.js"></script>
-  <script src="script.js"></script>
+  <script src="language.js?v=language-1"></script>
+  <script type="module" src="account.js?v=language-1"></script>
+  <script src="script.js?v=language-1"></script>
 </body>
 </html>

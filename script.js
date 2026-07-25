@@ -1,3 +1,6 @@
+const tr = value => window.zone6ixI18n?.t(value) ?? String(value ?? "");
+const activeLocale = () => window.zone6ixI18n?.locale() ?? "en-GB";
+
 const products = [
   {
     id: "small-turf",
@@ -262,15 +265,15 @@ function productCard(product) {
     <article class="product-card spotlight-card reveal ${product.featured ? "featured" : ""}" style="--accent:${product.accent}">
       <div class="product-visual">${productArtwork(product.art)}</div>
       <div class="product-body">
-        <span class="product-badge">${product.badge}</span>
-        <h3>${product.name}</h3>
-        <p class="product-description">${product.description}</p>
+        <span class="product-badge">${tr(product.badge)}</span>
+        <h3>${tr(product.name)}</h3>
+        <p class="product-description">${tr(product.description)}</p>
         <div class="product-meta">
-          <div><span>Card price</span><strong>£${product.cash.toFixed(2)}</strong></div>
-          <div><span>Robux price</span><strong>${product.robux.toLocaleString()} R$</strong></div>
+          <div><span>${tr("Card price")}</span><strong>£${product.cash.toFixed(2)}</strong></div>
+          <div><span>${tr("Robux price")}</span><strong>${product.robux.toLocaleString(activeLocale())} R$</strong></div>
         </div>
         <button class="add-button" type="button" data-product-id="${product.id}">
-          <span>Add to basket</span>
+          <span>${tr("Add to basket")}</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
         </button>
       </div>
@@ -305,7 +308,7 @@ function addToCart(productId, button) {
     const label = button.querySelector("span");
     const oldLabel = label.textContent;
     button.classList.add("added");
-    label.textContent = "Added to basket";
+    label.textContent = tr("Added to basket");
     setTimeout(() => {
       button.classList.remove("added");
       label.textContent = oldLabel;
@@ -330,7 +333,7 @@ function renderCart() {
 
   document.getElementById("cartCount").textContent = count;
   document.getElementById("cashTotal").textContent = `£${cashTotal.toFixed(2)}`;
-  document.getElementById("robuxTotal").textContent = `${robuxTotal.toLocaleString()} R$`;
+  document.getElementById("robuxTotal").textContent = `${robuxTotal.toLocaleString(activeLocale())} R$`;
   document.getElementById("dockCount").textContent = count;
   document.getElementById("dockTotal").textContent = `£${cashTotal.toFixed(2)}`;
 
@@ -341,10 +344,10 @@ function renderCart() {
     <div class="cart-item">
       <div class="cart-item-icon">${miniIcon(item)}</div>
       <div>
-        <h4>${escapeHtml(item.name)}</h4>
-        <p>£${Number(item.cash).toFixed(2)} or ${Number(item.robux).toLocaleString()} R$</p>
+        <h4>${escapeHtml(tr(item.name))}</h4>
+        <p>£${Number(item.cash).toFixed(2)} ${tr("or")} ${Number(item.robux).toLocaleString(activeLocale())} R$</p>
       </div>
-      <button class="remove-item" type="button" data-remove-index="${index}">Remove</button>
+      <button class="remove-item" type="button" data-remove-index="${index}">${tr("Remove")}</button>
     </div>
   `).join("");
 
@@ -372,7 +375,7 @@ function buildReview() {
   const paymentMethod = document.getElementById("paymentMethod").value;
   const cashTotal = cart.reduce((total, item) => total + Number(item.cash || 0), 0);
   const robuxTotal = cart.reduce((total, item) => total + Number(item.robux || 0), 0);
-  const selectedTotal = paymentMethod === "cash" ? `£${cashTotal.toFixed(2)}` : `${robuxTotal.toLocaleString()} R$`;
+  const selectedTotal = paymentMethod === "cash" ? `£${cashTotal.toFixed(2)}` : `${robuxTotal.toLocaleString(activeLocale())} R$`;
 
   currentOrderData = {
     robloxUsername: document.getElementById("robloxUsername").value.trim(),
@@ -382,22 +385,22 @@ function buildReview() {
     paymentMethod: paymentMethod === "cash" ? "Card / cash" : "Robux",
     products: cart.map(item => item.name).join(", "),
     cashTotal: `£${cashTotal.toFixed(2)}`,
-    robuxTotal: `${robuxTotal.toLocaleString()} R$`,
+    robuxTotal: `${robuxTotal.toLocaleString(activeLocale())} R$`,
     selectedTotal,
     customRequest: document.getElementById("customRequest").value.trim(),
     referenceLink: document.getElementById("referenceLink").value.trim() || "None provided"
   };
 
   const rows = [
-    ["Roblox username", currentOrderData.robloxUsername],
-    ["Gang name", currentOrderData.gangName],
-    ["Email", currentOrderData.customerEmail],
-    ["Discord", currentOrderData.discordUsername],
-    ["Payment choice", currentOrderData.paymentMethod],
-    ["Products", currentOrderData.products],
-    ["Total", currentOrderData.selectedTotal],
-    ["Request", currentOrderData.customRequest],
-    ["Reference link", currentOrderData.referenceLink]
+    [tr("Roblox username"), currentOrderData.robloxUsername],
+    [tr("Gang name"), currentOrderData.gangName],
+    [tr("Email"), currentOrderData.customerEmail],
+    [tr("Discord"), currentOrderData.discordUsername],
+    [tr("Payment choice"), tr(currentOrderData.paymentMethod)],
+    [tr("Products"), cart.map(item => tr(item.name)).join(", ")],
+    [tr("Total"), currentOrderData.selectedTotal],
+    [tr("Request"), currentOrderData.customRequest],
+    [tr("Reference link"), tr(currentOrderData.referenceLink)]
   ];
 
   document.getElementById("reviewContent").innerHTML = `
@@ -420,9 +423,10 @@ function escapeHtml(value) {
 }
 
 function setButtonLabel(button, text) {
+  const translated = tr(text);
   const span = button.querySelector("span");
-  if (span) span.textContent = text;
-  else button.textContent = text;
+  if (span) span.textContent = translated;
+  else button.textContent = translated;
 }
 
 document.getElementById("openCartButton").addEventListener("click", openCart);
@@ -437,7 +441,7 @@ document.addEventListener("keydown", event => {
 
 document.getElementById("continueButton").addEventListener("click", () => {
   if (cart.length === 0) {
-    alert("Add at least one item to your basket first.");
+    alert(tr("Add at least one item to your basket first."));
     return;
   }
   closeEverything();
@@ -451,7 +455,7 @@ document.querySelectorAll("[data-scroll-order]").forEach(button => {
 document.getElementById("orderForm").addEventListener("submit", async event => {
   event.preventDefault();
   if (cart.length === 0) {
-    alert("Your basket is empty. Add at least one product first.");
+    alert(tr("Your basket is empty. Add at least one product first."));
     document.getElementById("collections").scrollIntoView({ behavior: "smooth" });
     return;
   }
@@ -463,7 +467,7 @@ document.getElementById("orderForm").addEventListener("submit", async event => {
     document.getElementById("customerEmail").value = user.email || "";
     buildReview();
   } catch (error) {
-    alert(error.message || "Google sign-in is required to save this order.");
+    alert(tr(error.message || "Google sign-in is required to save this order."));
   }
 });
 
@@ -550,7 +554,7 @@ async function createSavedRobuxOrder() {
 }
 
 function showOrderSentMessage(message) {
-  document.getElementById("reviewContent").innerHTML = `<div class="notice"><strong>Order request sent.</strong><br>${escapeHtml(message)}</div>`;
+  document.getElementById("reviewContent").innerHTML = `<div class="notice"><strong>${tr("Order request sent.")}</strong><br>${escapeHtml(tr(message))}</div>`;
 }
 
 function updatePaymentButtonLabel() {
@@ -580,7 +584,7 @@ function createRobloxOrderUrl(orderCode) {
 
 document.getElementById("paymentButton").addEventListener("click", async () => {
   if (!currentOrderData) {
-    alert("Please review your order again.");
+    alert(tr("Please review your order again."));
     return;
   }
 
@@ -621,7 +625,7 @@ document.getElementById("paymentButton").addEventListener("click", async () => {
     window.location.assign(robloxOrderUrl);
   } catch (error) {
     console.error("Zone6ix payment error:", error);
-    alert(`Checkout error: ${error.message || "Unknown error"}`);
+    alert(`${tr("Checkout error")}: ${tr(error.message || "Unknown error")}`);
     button.disabled = false;
     updatePaymentButtonLabel();
   }
@@ -643,14 +647,14 @@ async function handleStripeReturn() {
       saveCart();
       renderCart();
       if (window.zone6ixAuth?.refreshOrders) await window.zone6ixAuth.refreshOrders().catch(() => {});
-      alert(`Payment confirmed. Order ${result.orderCode || ""} is now saved in My Orders.`.trim());
+      alert(tr(`Payment confirmed. Order ${result.orderCode || ""} is now saved in My Orders.`.trim()));
     } catch (error) {
       console.error("Payment confirmation error:", error);
-      alert("Stripe has not confirmed the payment yet. Do not pay again immediately. Contact Zone6ix if money was taken.");
+      alert(tr("Stripe has not confirmed the payment yet. Do not pay again immediately. Contact Zone6ix if money was taken."));
     }
   }
 
-  if (paymentResult === "cancelled") alert("Payment was cancelled. Your items are still in the basket.");
+  if (paymentResult === "cancelled") alert(tr("Payment was cancelled. Your items are still in the basket."));
   if (paymentResult) window.history.replaceState({}, document.title, window.location.pathname);
 }
 
@@ -700,6 +704,13 @@ function activateGlobalMotion() {
     header.classList.toggle("scrolled", window.scrollY > 30);
   }, { passive: true });
 }
+
+document.addEventListener("zone6ix-language-change", () => {
+  renderProducts();
+  renderCart();
+  updatePaymentButtonLabel();
+  if (reviewModal.classList.contains("open") && currentOrderData) buildReview();
+});
 
 renderProducts();
 renderCart();

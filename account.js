@@ -11,6 +11,9 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 
+const tr = value => window.zone6ixI18n?.t(value) ?? String(value ?? "");
+const activeLocale = () => window.zone6ixI18n?.locale() ?? "en-GB";
+
 const firebaseConfig = {
   apiKey: "AIzaSyApYiotTOTsFFFL2H6lsxeNeEC5CjMuvXo",
   authDomain: "zone6ix-shop.firebaseapp.com",
@@ -153,7 +156,7 @@ async function signInUser() {
     }
     if (error?.code !== "auth/popup-closed-by-user") {
       console.error("Google sign-in failed:", error);
-      alert(`Google sign-in failed: ${error?.message || "Unknown error"}`);
+      alert(`${tr("Google sign-in failed")}: ${tr(error?.message || "Unknown error")}`);
     }
     return null;
   }
@@ -217,39 +220,39 @@ function updateAccountUi() {
   if (!currentUser) {
     setAvatar(elements.accountAvatar, null);
     setAvatar(elements.accountMenuAvatar, null);
-    elements.accountLabel.textContent = "Sign in";
-    elements.accountSubLabel.textContent = "Google account";
-    elements.accountMenuName.textContent = "Not signed in";
-    elements.accountMenuEmail.textContent = "Sign in to save orders";
+    elements.accountLabel.textContent = tr("Sign in");
+    elements.accountSubLabel.textContent = tr("Google account");
+    elements.accountMenuName.textContent = tr("Not signed in");
+    elements.accountMenuEmail.textContent = tr("Sign in to save orders");
     elements.myOrdersButton.hidden = true;
     elements.adminButton.hidden = true;
     elements.signOutButton.hidden = true;
     elements.orderSignInButton.hidden = false;
-    elements.orderSignInButton.textContent = "Sign in";
+    elements.orderSignInButton.textContent = tr("Sign in");
     elements.orderAccountState.classList.remove("signed-in");
-    elements.orderAccountState.querySelector("strong").textContent = "Google sign-in required";
-    elements.orderAccountState.querySelector("small").textContent = "Your order and progress will be saved to your account.";
+    elements.orderAccountState.querySelector("strong").textContent = tr("Google sign-in required");
+    elements.orderAccountState.querySelector("small").textContent = tr("Your order and progress will be saved to your account.");
     const icon = elements.orderAccountState.querySelector(".order-account-icon");
     setAvatar(icon, null);
     prefillOrderForm();
     return;
   }
 
-  const name = currentUser.displayName || "Zone6ix customer";
+  const name = currentUser.displayName || tr("Zone6ix customer");
   setAvatar(elements.accountAvatar, currentUser);
   setAvatar(elements.accountMenuAvatar, currentUser);
   elements.accountLabel.textContent = name.split(" ")[0];
-  elements.accountSubLabel.textContent = adminAllowed ? "Owner account" : "My Zone6ix";
+  elements.accountSubLabel.textContent = adminAllowed ? tr("Owner account") : tr("My Zone6ix");
   elements.accountMenuName.textContent = name;
   elements.accountMenuEmail.textContent = currentUser.email || "";
   elements.myOrdersButton.hidden = false;
   elements.adminButton.hidden = !adminAllowed;
   elements.signOutButton.hidden = false;
   elements.orderSignInButton.hidden = false;
-  elements.orderSignInButton.textContent = "My orders";
+  elements.orderSignInButton.textContent = tr("My orders");
   elements.orderAccountState.classList.add("signed-in");
-  elements.orderAccountState.querySelector("strong").textContent = `Signed in as ${name}`;
-  elements.orderAccountState.querySelector("small").textContent = "This order and every update will be saved to My Orders.";
+  elements.orderAccountState.querySelector("strong").textContent = tr(`Signed in as ${name}`);
+  elements.orderAccountState.querySelector("small").textContent = tr("This order and every update will be saved to My Orders.");
   setAvatar(elements.orderAccountState.querySelector(".order-account-icon"), currentUser);
   prefillOrderForm();
 }
@@ -271,12 +274,12 @@ async function syncAccount() {
   }
 }
 
-function formatDate(value) {
-  if (!value) return "Unknown date";
+function formatDate(value, translated = true) {
+  if (!value) return translated ? tr("Unknown date") : "Unknown date";
   const normalized = value.includes("T") ? value : `${value.replace(" ", "T")}Z`;
   const date = new Date(normalized);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(translated ? activeLocale() : "en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -301,13 +304,15 @@ const statusNames = {
   robux_verified: "Robux verified"
 };
 
-function statusName(value) {
-  return statusNames[value] || String(value || "Unknown").replaceAll("_", " ");
+function statusName(value, translated = true) {
+  const raw = statusNames[value] || String(value || "Unknown").replaceAll("_", " ");
+  return translated ? tr(raw) : raw;
 }
 
-function orderTotal(order) {
-  if (order.payment_method === "robux") return `${Number(order.robux_total || 0).toLocaleString("en-GB")} R$`;
-  return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(order.cash_total_pence || 0) / 100);
+function orderTotal(order, translated = true) {
+  const locale = translated ? activeLocale() : "en-GB";
+  if (order.payment_method === "robux") return `${Number(order.robux_total || 0).toLocaleString(locale)} R$`;
+  return new Intl.NumberFormat(locale, { style: "currency", currency: "GBP" }).format(Number(order.cash_total_pence || 0) / 100);
 }
 
 function renderCustomerOrders(orders) {
@@ -316,14 +321,14 @@ function renderCustomerOrders(orders) {
   const paid = orders.filter(order => ["paid", "robux_verified"].includes(order.payment_status)).length;
 
   elements.ordersSummary.innerHTML = [
-    ["All orders", orders.length],
-    ["Active builds", active],
-    ["Payments confirmed", paid],
-    ["Completed", completed]
+    [tr("All orders"), orders.length],
+    [tr("Active builds"), active],
+    [tr("Payments confirmed"), paid],
+    [tr("Completed"), completed]
   ].map(([label, value]) => `<article class="summary-card"><span>${label}</span><strong>${value}</strong></article>`).join("");
 
   if (!orders.length) {
-    elements.ordersList.innerHTML = `<div class="dashboard-empty"><strong>No saved orders yet.</strong><span>Your next Stripe or Robux order will appear here automatically.</span></div>`;
+    elements.ordersList.innerHTML = `<div class="dashboard-empty"><strong>${tr("No saved orders yet.")}</strong><span>${tr("Your next Stripe or Robux order will appear here automatically.")}</span></div>`;
     return;
   }
 
@@ -331,18 +336,18 @@ function renderCustomerOrders(orders) {
     const latestVisibleUpdate = [...(order.updates || [])]
       .filter(update => Number(update.visible_to_customer) === 1)
       .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
-    const updateText = order.customer_update || latestVisibleUpdate?.message || "No new update has been added yet.";
-    const items = (order.items || []).map(item => `<li><span>${escapeHtml(item.product_name)}${Number(item.quantity) > 1 ? ` × ${Number(item.quantity)}` : ""}</span><strong>${order.payment_method === "robux" ? `${Number(item.robux_price || 0).toLocaleString("en-GB")} R$` : `£${(Number(item.cash_price_pence || 0) / 100).toFixed(2)}`}</strong></li>`).join("");
+    const updateText = order.customer_update || latestVisibleUpdate?.message || tr("No new update has been added yet.");
+    const items = (order.items || []).map(item => `<li><span>${escapeHtml(tr(item.product_name))}${Number(item.quantity) > 1 ? ` × ${Number(item.quantity)}` : ""}</span><strong>${order.payment_method === "robux" ? `${Number(item.robux_price || 0).toLocaleString(activeLocale())} R$` : `£${(Number(item.cash_price_pence || 0) / 100).toFixed(2)}`}</strong></li>`).join("");
     return `
       <article class="order-history-card">
         <div class="order-history-head">
-          <div class="order-history-code"><small>Order code</small><strong>${escapeHtml(order.order_code)}</strong></div>
+          <div class="order-history-code"><small>${tr("Order code")}</small><strong>${escapeHtml(order.order_code)}</strong></div>
           <span class="order-status-pill status-${escapeHtml(order.order_status)}">${escapeHtml(statusName(order.order_status))}</span>
-          <div class="order-history-total"><small>${order.payment_method === "robux" ? "Robux total" : "Card total"}</small><strong>${escapeHtml(orderTotal(order))}</strong></div>
+          <div class="order-history-total"><small>${order.payment_method === "robux" ? tr("Robux total") : tr("Card total")}</small><strong>${escapeHtml(orderTotal(order))}</strong></div>
         </div>
         <div class="order-history-body">
-          <div class="order-history-products"><h4>Products</h4><ul>${items || "<li><span>No items found</span></li>"}</ul></div>
-          <div class="order-history-update"><h4>Latest update</h4><p>${escapeHtml(updateText)}</p></div>
+          <div class="order-history-products"><h4>${tr("Products")}</h4><ul>${items || `<li><span>${tr("No items found")}</span></li>`}</ul></div>
+          <div class="order-history-update"><h4>${tr("Latest update")}</h4><p>${escapeHtml(updateText)}</p></div>
         </div>
         <div class="order-meta-line">
           <span>${escapeHtml(order.gang_name)}</span>
@@ -356,12 +361,12 @@ function renderCustomerOrders(orders) {
 
 async function loadOrders() {
   if (!currentUser) return;
-  elements.ordersList.innerHTML = `<div class="dashboard-loading"><i></i><span>Loading your orders…</span></div>`;
+  elements.ordersList.innerHTML = `<div class="dashboard-loading"><i></i><span>${tr("Loading your orders…")}</span></div>`;
   try {
     const data = await apiFetch("/api/orders");
     renderCustomerOrders(data.orders || []);
   } catch (error) {
-    elements.ordersList.innerHTML = `<div class="dashboard-error"><strong>Could not load your orders.</strong><span>${escapeHtml(error.message)}</span></div>`;
+    elements.ordersList.innerHTML = `<div class="dashboard-error"><strong>${tr("Could not load your orders.")}</strong><span>${escapeHtml(tr(error.message))}</span></div>`;
   }
 }
 
@@ -369,7 +374,7 @@ async function openOrdersDashboard() {
   const user = await requireUser();
   if (!user) return;
   closeAccountMenu();
-  elements.profileName.textContent = currentUser.displayName || "Zone6ix customer";
+  elements.profileName.textContent = currentUser.displayName || tr("Zone6ix customer");
   elements.profileEmail.textContent = currentUser.email || "";
   setAvatar(elements.profileAvatar, currentUser);
   elements.profileRobloxUsername.value = accountProfile?.robloxUsername || "";
@@ -382,7 +387,7 @@ async function openOrdersDashboard() {
 
 async function saveProfile(event) {
   event.preventDefault();
-  elements.profileMessage.textContent = "Saving…";
+  elements.profileMessage.textContent = tr("Saving…");
   try {
     const data = await apiFetch("/api/account", {
       method: "POST",
@@ -393,10 +398,10 @@ async function saveProfile(event) {
       })
     });
     accountProfile = data.user;
-    elements.profileMessage.textContent = "Saved. These details will fill your next order.";
+    elements.profileMessage.textContent = tr("Saved. These details will fill your next order.");
     prefillOrderForm();
   } catch (error) {
-    elements.profileMessage.textContent = error.message;
+    elements.profileMessage.textContent = tr(error.message);
   }
 }
 
@@ -442,8 +447,8 @@ function renderAdminOrderList() {
   elements.adminOrderList.innerHTML = filtered.map(order => `
     <button class="admin-order-row ${order.id === selectedAdminOrderId ? "selected" : ""}" type="button" data-admin-order-id="${escapeHtml(order.id)}">
       <span><strong>${escapeHtml(order.order_code)} · ${escapeHtml(order.gang_name)}</strong><small>${escapeHtml(order.roblox_username)} · ${escapeHtml(order.customer_email)}</small></span>
-      <span><strong>${escapeHtml(statusName(order.order_status))}</strong><small>${escapeHtml(statusName(order.payment_status))} · ${escapeHtml(formatDate(order.created_at))}</small></span>
-      <span class="admin-row-total">${escapeHtml(orderTotal(order))}</span>
+      <span><strong>${escapeHtml(statusName(order.order_status, false))}</strong><small>${escapeHtml(statusName(order.payment_status, false))} · ${escapeHtml(formatDate(order.created_at, false))}</small></span>
+      <span class="admin-row-total">${escapeHtml(orderTotal(order, false))}</span>
     </button>`).join("");
   elements.adminOrderList.querySelectorAll("[data-admin-order-id]").forEach(button => {
     button.addEventListener("click", () => selectAdminOrder(button.dataset.adminOrderId));
@@ -462,7 +467,7 @@ function selectAdminOrder(orderId) {
   elements.adminEditor.innerHTML = `
     <div class="admin-editor-head">
       <div><small>${escapeHtml(order.order_code)}</small><h3>${escapeHtml(order.gang_name)}</h3></div>
-      <span class="order-status-pill status-${escapeHtml(order.order_status)}">${escapeHtml(statusName(order.order_status))}</span>
+      <span class="order-status-pill status-${escapeHtml(order.order_status)}">${escapeHtml(statusName(order.order_status, false))}</span>
     </div>
 
     <div class="admin-detail-grid">
@@ -471,8 +476,8 @@ function selectAdminOrder(orderId) {
       <div class="admin-detail"><span>Roblox</span><strong>${escapeHtml(order.roblox_username)}</strong></div>
       <div class="admin-detail"><span>Discord</span><strong>${escapeHtml(order.discord_username)}</strong></div>
       <div class="admin-detail"><span>Payment method</span><strong>${escapeHtml(order.payment_method === "robux" ? "Robux" : "Stripe card")}</strong></div>
-      <div class="admin-detail"><span>Total</span><strong>${escapeHtml(orderTotal(order))}</strong></div>
-      <div class="admin-detail"><span>Created</span><strong>${escapeHtml(formatDate(order.created_at))}</strong></div>
+      <div class="admin-detail"><span>Total</span><strong>${escapeHtml(orderTotal(order, false))}</strong></div>
+      <div class="admin-detail"><span>Created</span><strong>${escapeHtml(formatDate(order.created_at, false))}</strong></div>
       <div class="admin-detail"><span>Stripe session</span><strong>${escapeHtml(order.stripe_checkout_session_id || "Not applicable")}</strong></div>
     </div>
 
@@ -482,13 +487,13 @@ function selectAdminOrder(orderId) {
 
     <label class="admin-editor-field"><span>Order status</span>
       <select id="adminOrderStatus">
-        ${["awaiting_payment", "paid", "reviewing", "in_progress", "ready", "completed", "cancelled"].map(value => `<option value="${value}" ${order.order_status === value ? "selected" : ""}>${statusName(value)}</option>`).join("")}
+        ${["awaiting_payment", "paid", "reviewing", "in_progress", "ready", "completed", "cancelled"].map(value => `<option value="${value}" ${order.order_status === value ? "selected" : ""}>${statusName(value, false)}</option>`).join("")}
       </select>
     </label>
 
     <label class="admin-editor-field"><span>Payment status</span>
       <select id="adminPaymentStatus">
-        ${["unpaid", "pending", "paid", "failed", "refunded", "robux_pending", "robux_verified"].map(value => `<option value="${value}" ${order.payment_status === value ? "selected" : ""}>${statusName(value)}</option>`).join("")}
+        ${["unpaid", "pending", "paid", "failed", "refunded", "robux_pending", "robux_verified"].map(value => `<option value="${value}" ${order.payment_status === value ? "selected" : ""}>${statusName(value, false)}</option>`).join("")}
       </select>
     </label>
 
@@ -553,12 +558,24 @@ async function loadAdminOrders() {
 }
 
 async function openAdminDashboard() {
-  const user = await requireUser();
-  if (!user || !adminAllowed) {
-    alert("This account does not have admin access.");
+  closeAccountMenu();
+
+  if (!elements.adminDashboard || !elements.dashboardBackdrop) {
+    alert("The admin dashboard files are out of sync. Refresh the page after the latest deployment finishes.");
     return;
   }
+
+  // Open immediately so the click always gives visible feedback, even if the API is slow.
   openDashboard(elements.adminDashboard);
+  elements.adminOrderList.innerHTML = `<div class="dashboard-loading"><i></i><span>Checking admin access…</span></div>`;
+
+  const user = await requireUser();
+  if (!user || !adminAllowed) {
+    closeDashboards();
+    alert("This Google account does not have admin access.");
+    return;
+  }
+
   await loadAdminOrders();
 }
 
@@ -571,7 +588,14 @@ function bindEvents() {
   document.addEventListener("click", closeAccountMenu);
   elements.orderSignInButton?.addEventListener("click", () => currentUser ? openOrdersDashboard() : signInUser());
   elements.myOrdersButton?.addEventListener("click", openOrdersDashboard);
-  elements.adminButton?.addEventListener("click", openAdminDashboard);
+  elements.adminButton?.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    openAdminDashboard().catch(error => {
+      console.error("Admin dashboard failed to open:", error);
+      alert(error?.message || "The admin dashboard could not open.");
+    });
+  });
   elements.signOutButton?.addEventListener("click", async () => {
     closeAccountMenu();
     closeDashboards();
@@ -593,6 +617,13 @@ function bindEvents() {
   });
 }
 
+document.addEventListener("zone6ix-language-change", () => {
+  updateAccountUi();
+  if (elements.ordersDashboard?.classList.contains("open") && currentUser) {
+    loadOrders().catch(() => {});
+  }
+});
+
 window.zone6ixAuth = {
   ready,
   getUser: () => currentUser,
@@ -604,7 +635,8 @@ window.zone6ixAuth = {
   apiFetch,
   openMyOrders: openOrdersDashboard,
   refreshOrders: loadOrders,
-  isAdmin: () => adminAllowed
+  isAdmin: () => adminAllowed,
+  openAdmin: openAdminDashboard
 };
 
 document.dispatchEvent(new CustomEvent("zone6ix-auth-module"));
