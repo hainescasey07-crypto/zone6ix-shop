@@ -145,6 +145,21 @@ let products = DEFAULT_PRODUCTS.map(product => ({ ...product }));
 let cart = [];
 let currentOrderData = null;
 
+const PRODUCTS_REQUIRING_CUSTOM_REQUEST = new Set([
+  "small-turf",
+  "medium-turf",
+  "large-turf",
+  "custom-gun",
+  "custom-name",
+  "custom-emoji",
+  "custom-level",
+  "identity-bundle"
+]);
+
+function cartRequiresCustomRequest() {
+  return cart.some(item => PRODUCTS_REQUIRING_CUSTOM_REQUEST.has(String(item.id || "")));
+}
+
 const turfProducts = document.getElementById("turfProducts");
 const gunProducts = document.getElementById("gunProducts");
 const identityProducts = document.getElementById("identityProducts");
@@ -461,6 +476,15 @@ function closeEverything() {
 
 function buildReview() {
   const paymentMethod = document.getElementById("paymentMethod").value;
+  const customRequestInput = document.getElementById("customRequest");
+  const enteredCustomRequest = customRequestInput.value.trim();
+
+  if (cartRequiresCustomRequest() && enteredCustomRequest.length < 3) {
+    customRequestInput.focus();
+    throw new Error("Please describe what you want customised for the selected item.");
+  }
+
+  const customRequest = enteredCustomRequest || "No custom request provided.";
   const cashTotal = cart.reduce((total, item) => total + Number(item.cash || 0), 0);
   const robuxTotal = cart.reduce((total, item) => total + Number(item.robux || 0), 0);
   const selectedTotal = paymentMethod === "cash" ? `£${cashTotal.toFixed(2)}` : `${robuxTotal.toLocaleString(activeLocale())} R$`;
@@ -475,7 +499,7 @@ function buildReview() {
     cashTotal: `£${cashTotal.toFixed(2)}`,
     robuxTotal: `${robuxTotal.toLocaleString(activeLocale())} R$`,
     selectedTotal,
-    customRequest: document.getElementById("customRequest").value.trim(),
+    customRequest,
     referenceLink: document.getElementById("referenceLink").value.trim() || "None provided",
     gangShirtLink: document.getElementById("gangShirtLink").value.trim() || "None provided",
     gangPantsLink: document.getElementById("gangPantsLink").value.trim() || "None provided",

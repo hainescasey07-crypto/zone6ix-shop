@@ -296,7 +296,7 @@ export function parseCustomer(body = {}) {
     robloxUsername: cleanText(customer.robloxUsername, { name: "Roblox username", min: 1, max: 50, required: true }),
     discordUsername: cleanText(customer.discordUsername, { name: "Discord username", min: 1, max: 80, required: true }),
     gangName: cleanText(customer.gangName, { name: "Gang name", min: 1, max: 100, required: true }),
-    customRequest: cleanText(customer.customRequest, { name: "Custom request", min: 3, max: 3000, required: true }),
+    customRequest: cleanText(customer.customRequest, { name: "Custom request", max: 3000 }) || "No custom request provided.",
     referenceLink: cleanReferenceLink(customer.referenceLink),
     gangShirtLink: cleanReferenceLink(customer.gangShirtLink),
     gangPantsLink: cleanReferenceLink(customer.gangPantsLink),
