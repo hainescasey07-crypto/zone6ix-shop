@@ -2,6 +2,8 @@ const tr = value => window.zone6ixI18n?.t(value) ?? String(value ?? "");
 const locale = () => window.zone6ixI18n?.locale?.() || "en-GB";
 
 let authApi = null;
+let authChangeQueue = Promise.resolve();
+let queuedAuthKey = null;
 let walletData = null;
 let storeItems = [];
 let earningSessionId = null;
@@ -1319,15 +1321,33 @@ async function handleAuthChange(user) {
   renderStoreItems();
 }
 
+function queueAuthChange(user, { force = false } = {}) {
+  const key = user?.uid || "signed-out";
+  if (!force && queuedAuthKey === key) return authChangeQueue;
+  queuedAuthKey = key;
+  authChangeQueue = authChangeQueue
+    .then(() => handleAuthChange(user))
+    .catch(error => console.error("Zone6ix account rewards refresh failed:", error));
+  return authChangeQueue;
+}
+
 async function init() {
   authApi = await waitForAuth();
   if (!authApi) return;
   bindEvents();
+
+  // Subscribe before waiting for Firebase restoration so the first restored
+  // login event can never be missed on refresh.
+  document.addEventListener("zone6ix-auth-change", event => {
+    updateAdminAccessUi();
+    queueAuthChange(event.detail?.user);
+  });
+
   await loadStoreItems();
   await authApi.ready;
   updateAdminAccessUi();
-  await handleAuthChange(currentUser());
-  document.addEventListener("zone6ix-auth-change", event => handleAuthChange(event.detail?.user));
+  await queueAuthChange(currentUser());
+
   document.addEventListener("zone6ix-language-change", () => {
     updateWalletSummary();
     renderWalletActivity();

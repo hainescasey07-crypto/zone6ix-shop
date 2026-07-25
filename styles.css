@@ -2895,3 +2895,51 @@ details p { max-width:650px; margin:-7px 0 24px; color:#7d8994; font-size:11px; 
   font-size: .9rem;
   line-height: 1.65;
 }
+
+/* ============================================================
+   ADMIN SCROLL + SAVED-SESSION POLISH
+   ============================================================ */
+.admin-dashboard,
+.admin-tab-panel {
+  min-height: 0;
+}
+
+/* Long control-centre pages need their own scroll area because the page
+   behind the dashboard is intentionally locked while the modal is open. */
+#adminPanelTokens.admin-tab-panel.active,
+#adminPanelSite.admin-tab-panel.active,
+#adminPanelSecurity.admin-tab-panel.active,
+#adminPanelAdmins.admin-tab-panel.active {
+  display: block;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+#adminPanelTokens > .token-settings-layout,
+#adminPanelSite > .site-manager-shell,
+#adminPanelSecurity > .security-manager-grid,
+#adminPanelAdmins > .admin-access-layout {
+  min-height: max-content;
+}
+
+/* Orders, inventory, redemptions and customers already own nested scroll
+   regions, so keep those fitted to the available dashboard height. */
+#adminPanelOrders.admin-tab-panel.active,
+#adminPanelStore.admin-tab-panel.active,
+#adminPanelRedemptions.admin-tab-panel.active,
+#adminPanelCustomers.admin-tab-panel.active {
+  overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  #adminPanelTokens.admin-tab-panel.active,
+  #adminPanelSite.admin-tab-panel.active,
+  #adminPanelSecurity.admin-tab-panel.active,
+  #adminPanelAdmins.admin-tab-panel.active {
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+}
+

@@ -722,26 +722,82 @@ window.zone6ixAuth = {
 
 document.dispatchEvent(new CustomEvent("zone6ix-auth-module"));
 bindEvents();
-setPersistence(auth, browserLocalPersistence).catch(error => console.error("Auth persistence error:", error));
-getRedirectResult(auth).catch(error => console.error("Google redirect result error:", error));
 
-onAuthStateChanged(auth, async user => {
-  currentUser = user;
-  accountProfile = null;
-  adminAllowed = false;
-  ownerAllowed = false;
-  adminRole = null;
-  adminPermissions = {};
-  updateAccountUi();
+let restoredSessionSync = Promise.resolve();
 
-  // Resolve auth restoration immediately. API calls made by syncAccount can
-  // now safely request the restored user's ID token on the first page load.
-  if (!readyResolved) {
-    readyResolved = true;
-    resolveReady(user);
-    document.dispatchEvent(new CustomEvent("zone6ix-auth-ready"));
+function announceAuthState(user) {
+  document.dispatchEvent(new CustomEvent("zone6ix-auth-change", {
+    detail: {
+      user,
+      isAdmin: adminAllowed,
+      isOwner: ownerAllowed,
+      role: adminRole,
+      permissions: { ...adminPermissions }
+    }
+  }));
+}
+
+async function restoreCurrentSession({ forceTokenRefresh = false } = {}) {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  restoredSessionSync = restoredSessionSync.then(async () => {
+    currentUser = user;
+    try {
+      if (forceTokenRefresh) await user.getIdToken(true);
+      await syncAccount();
+      announceAuthState(user);
+    } catch (error) {
+      console.error("Saved login refresh failed:", error);
+    }
+  });
+
+  return restoredSessionSync;
+}
+
+async function bootAuthentication() {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch (error) {
+    console.error("Auth persistence error:", error);
   }
 
-  if (user) await syncAccount();
-  document.dispatchEvent(new CustomEvent("zone6ix-auth-change", { detail: { user } }));
+  try {
+    await getRedirectResult(auth);
+  } catch (error) {
+    console.error("Google redirect result error:", error);
+  }
+
+  onAuthStateChanged(auth, async user => {
+    currentUser = user;
+    accountProfile = null;
+    adminAllowed = false;
+    ownerAllowed = false;
+    adminRole = null;
+    adminPermissions = {};
+    updateAccountUi();
+
+    // Finish the secure account/admin sync before announcing that auth is
+    // ready. Other modules can now trust tokens, role permissions and wallet
+    // access immediately after a normal refresh or a reopened Safari tab.
+    if (user) await syncAccount();
+
+    if (!readyResolved) {
+      readyResolved = true;
+      resolveReady(user);
+      document.dispatchEvent(new CustomEvent("zone6ix-auth-ready", {
+        detail: { user, isAdmin: adminAllowed, isOwner: ownerAllowed }
+      }));
+    }
+
+    announceAuthState(user);
+  });
+}
+
+// Safari can restore a page from its back/forward cache without re-running
+// every network request. Re-check the saved Firebase session when that occurs.
+window.addEventListener("pageshow", event => {
+  if (event.persisted && auth.currentUser) restoreCurrentSession({ forceTokenRefresh: true });
 });
+
+bootAuthentication().catch(error => console.error("Authentication failed to initialise:", error));
