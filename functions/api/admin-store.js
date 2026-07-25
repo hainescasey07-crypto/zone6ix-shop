@@ -1,14 +1,11 @@
 import {
   cleanText,
   errorResponse,
-  requireAdminUser,
+  requirePermission,
   json,
 } from "../_lib/common.js";
 import { parseStoreItem, publicStoreItem, slugify } from "../_lib/store.js";
-
-async function requireAdmin(request, db) {
-  return requireAdminUser(request, db);
-}
+import { logAdminAction } from "../_lib/site.js";
 
 async function allItems(db) {
   const result = await db.prepare(`
@@ -26,7 +23,7 @@ async function allItems(db) {
 
 export async function onRequestGet({ request, env }) {
   try {
-    await requireAdmin(request, env.DB);
+    await requirePermission(request, env.DB, "manageStore");
     return json({ items: await allItems(env.DB) });
   } catch (error) {
     return errorResponse(error);
@@ -35,7 +32,7 @@ export async function onRequestGet({ request, env }) {
 
 export async function onRequestPost({ request, env }) {
   try {
-    const admin = await requireAdmin(request, env.DB);
+    const admin = await requirePermission(request, env.DB, "manageStore");
     const body = await request.json().catch(() => ({}));
     const item = parseStoreItem(body);
     const id = crypto.randomUUID();
@@ -63,6 +60,7 @@ export async function onRequestPost({ request, env }) {
     const row = await env.DB.prepare(`
       SELECT i.*, 0 AS has_image, 0 AS redemption_count FROM store_items i WHERE i.id = ?
     `).bind(id).first();
+    await logAdminAction(env.DB, admin, "event_item_created", "store_item", id, { name: item.name, status: item.status });
     return json({ item: publicStoreItem(row) }, 201);
   } catch (error) {
     return errorResponse(error);
@@ -71,7 +69,7 @@ export async function onRequestPost({ request, env }) {
 
 export async function onRequestPatch({ request, env }) {
   try {
-    const admin = await requireAdmin(request, env.DB);
+    const admin = await requirePermission(request, env.DB, "manageStore");
     const body = await request.json().catch(() => ({}));
     const itemId = cleanText(body.itemId, { name: "Item ID", min: 1, max: 100, required: true });
     const existing = await env.DB.prepare("SELECT * FROM store_items WHERE id = ?").bind(itemId).first();
@@ -83,6 +81,8 @@ export async function onRequestPatch({ request, env }) {
         SET status = 'draft', updated_at = CURRENT_TIMESTAMP, updated_by_email = ?
         WHERE id = ?
       `).bind(admin.email, itemId).run();
+
+      await logAdminAction(env.DB, admin, "event_item_unarchived", "store_item", itemId, {});
 
       const restored = await env.DB.prepare(`
         SELECT i.*,
@@ -118,6 +118,7 @@ export async function onRequestPatch({ request, env }) {
         (SELECT COUNT(*) FROM store_redemptions r WHERE r.item_id = i.id AND r.status NOT IN ('cancelled','refunded')) AS redemption_count
       FROM store_items i WHERE i.id = ?
     `).bind(itemId).first();
+    await logAdminAction(env.DB, admin, "event_item_updated", "store_item", itemId, { name: item.name, status: item.status });
     return json({ item: publicStoreItem(row) });
   } catch (error) {
     return errorResponse(error);
@@ -126,7 +127,7 @@ export async function onRequestPatch({ request, env }) {
 
 export async function onRequestDelete({ request, env }) {
   try {
-    const admin = await requireAdmin(request, env.DB);
+    const admin = await requirePermission(request, env.DB, "manageStore");
     const url = new URL(request.url);
     const itemId = cleanText(url.searchParams.get("itemId"), { name: "Item ID", min: 1, max: 100, required: true });
     const mode = url.searchParams.get("mode") === "permanent" ? "permanent" : "archive";
@@ -188,12 +189,14 @@ export async function onRequestDelete({ request, env }) {
         env.DB.prepare("DELETE FROM store_item_images WHERE item_id = ?").bind(itemId),
         env.DB.prepare("DELETE FROM store_items WHERE id = ?").bind(itemId)
       ]);
+      await logAdminAction(env.DB, admin, "event_item_deleted", "store_item", itemId, { name: existing.name, redemptionCount, refundedMilli });
       return json({ deleted: true, itemId, redemptionCount, refundedMilli });
     }
 
     await env.DB.prepare(`
       UPDATE store_items SET status = 'archived', updated_at = CURRENT_TIMESTAMP, updated_by_email = ? WHERE id = ?
     `).bind(admin.email, itemId).run();
+    await logAdminAction(env.DB, admin, "event_item_archived", "store_item", itemId, { name: existing.name });
     return json({ archived: true, itemId });
   } catch (error) {
     return errorResponse(error);

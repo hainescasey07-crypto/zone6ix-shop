@@ -2,21 +2,19 @@ import {
   cleanText,
   errorResponse,
   hydrateOrders,
-  requireAdminUser,
+  requirePermission,
   json,
 } from "../_lib/common.js";
 import { awardPurchaseBonus } from "../_lib/tokens.js";
+import { ensureSiteSchema, logAdminAction } from "../_lib/site.js";
 
 const ORDER_STATUSES = new Set(["awaiting_payment", "paid", "reviewing", "in_progress", "ready", "completed", "cancelled"]);
 const PAYMENT_STATUSES = new Set(["unpaid", "pending", "paid", "failed", "refunded", "robux_pending", "robux_verified"]);
 
-async function requireAdmin(request, db) {
-  return requireAdminUser(request, db);
-}
-
 export async function onRequestGet({ request, env }) {
   try {
-    await requireAdmin(request, env.DB);
+    await requirePermission(request, env.DB, "viewOrders");
+    await ensureSiteSchema(env.DB);
     const result = await env.DB.prepare(`
       SELECT o.*, u.photo_url AS account_photo_url, u.display_name AS account_display_name
       FROM orders o
@@ -32,7 +30,8 @@ export async function onRequestGet({ request, env }) {
 
 export async function onRequestPatch({ request, env }) {
   try {
-    const admin = await requireAdmin(request, env.DB);
+    const admin = await requirePermission(request, env.DB, "manageOrders");
+    await ensureSiteSchema(env.DB);
     const body = await request.json();
     const orderId = cleanText(body.orderId, { name: "Order ID", min: 1, max: 100, required: true });
     const orderStatus = cleanText(body.orderStatus, { name: "Order status", min: 1, max: 40, required: true });
@@ -70,6 +69,7 @@ export async function onRequestPatch({ request, env }) {
     }
 
     await env.DB.batch(statements);
+    await logAdminAction(env.DB, admin, "order_updated", "order", orderId, { orderStatus, paymentStatus });
     if (["paid", "robux_verified"].includes(paymentStatus) && !["paid", "robux_verified"].includes(existing.payment_status)) {
       await awardPurchaseBonus(env.DB, existing, admin.email);
     }
@@ -89,7 +89,8 @@ export async function onRequestPatch({ request, env }) {
 
 export async function onRequestDelete({ request, env }) {
   try {
-    await requireAdmin(request, env.DB);
+    const admin = await requirePermission(request, env.DB, "deleteOrders");
+    await ensureSiteSchema(env.DB);
     const url = new URL(request.url);
     const orderId = cleanText(url.searchParams.get("orderId"), {
       name: "Order ID",
@@ -110,6 +111,7 @@ export async function onRequestDelete({ request, env }) {
       env.DB.prepare("DELETE FROM order_items WHERE order_id = ?").bind(orderId),
       env.DB.prepare("DELETE FROM orders WHERE id = ?").bind(orderId)
     ]);
+    await logAdminAction(env.DB, admin, "order_deleted", "order", orderId, { orderCode: existing.order_code });
 
     return json({
       deleted: true,

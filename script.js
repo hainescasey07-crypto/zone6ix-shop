@@ -1,7 +1,7 @@
 const tr = value => window.zone6ixI18n?.t(value) ?? String(value ?? "");
 const activeLocale = () => window.zone6ixI18n?.locale() ?? "en-GB";
 
-const products = [
+const DEFAULT_PRODUCTS = [
   {
     id: "small-turf",
     category: "turfs",
@@ -83,41 +83,41 @@ const products = [
   {
     id: "custom-name",
     category: "identity",
-    name: "Custom Name",
-    description: "Give your gang a unique in-game name treatment created specifically for your group.",
+    name: "Custom Player Name",
+    description: "A custom name display for one individual player, styled to stand out above their character in Zone6ix.",
     cash: 2,
     robux: 250,
-    badge: "NAME SYSTEM",
+    badge: "PLAYER NAME",
     accent: "#69ccff",
     art: "name"
   },
   {
     id: "custom-emoji",
     category: "identity",
-    name: "Custom Icon",
-    description: "Add a recognisable custom symbol beside your gang identity without relying on a default emoji.",
+    name: "Custom Player Emoji",
+    description: "Add an emoji beside one individual player’s name using a Roblox-supported emoji that matches their style.",
     cash: 2,
     robux: 250,
-    badge: "ICON SYSTEM",
+    badge: "PLAYER EMOJI",
     accent: "#78d5ff",
-    art: "icon"
+    art: "emoji"
   },
   {
     id: "custom-level",
     category: "identity",
-    name: "Custom Level",
-    description: "Choose a custom level display that adds status and a stronger profile to every gang member.",
+    name: "Custom Player Level",
+    description: "Choose a custom level or status display for one individual player rather than the whole gang.",
     cash: 2,
     robux: 250,
-    badge: "LEVEL SYSTEM",
+    badge: "PLAYER LEVEL",
     accent: "#55baf0",
     art: "level"
   },
   {
     id: "identity-bundle",
     category: "identity",
-    name: "Identity Bundle",
-    description: "The complete gang name, custom icon and custom level system together at a lower bundle price.",
+    name: "Player Customisation Bundle",
+    description: "Custom player name, emoji and level together for one individual player at a lower bundle price.",
     cash: 5,
     robux: 600,
     badge: "BEST VALUE",
@@ -126,7 +126,7 @@ const products = [
   }
 ];
 
-const ROBUX_PRODUCT_IDS = {
+let ROBUX_PRODUCT_IDS = {
   "small-turf": 3611483762,
   "medium-turf": 3611483961,
   "large-turf": 3611484082,
@@ -140,7 +140,9 @@ const ROBUX_PRODUCT_IDS = {
   "identity-bundle": 3611484757
 };
 
-let cart = JSON.parse(localStorage.getItem("zone6ixCart") || "[]");
+let storedCart = JSON.parse(localStorage.getItem("zone6ixCart") || "[]");
+let products = DEFAULT_PRODUCTS.map(product => ({ ...product }));
+let cart = [];
 let currentOrderData = null;
 
 const turfProducts = document.getElementById("turfProducts");
@@ -152,6 +154,91 @@ const cartEmpty = document.getElementById("cartEmpty");
 const overlay = document.getElementById("overlay");
 const reviewModal = document.getElementById("reviewModal");
 const basketDock = document.getElementById("basketDock");
+
+
+function safeText(element, value) {
+  if (element && value !== undefined && value !== null) element.textContent = String(value);
+}
+
+function applySiteSettings(settings = {}) {
+  window.zone6ixSiteSettings = settings;
+  if (settings.siteName) document.title = settings.siteName;
+  document.documentElement.style.setProperty("--blue", settings.accentPrimary || "#4bbcff");
+  document.documentElement.style.setProperty("--blue-strong", settings.accentSecondary || "#1769ff");
+  document.documentElement.style.setProperty("--site-accent", settings.accentPrimary || "#4bbcff");
+  document.documentElement.style.setProperty("--site-accent-secondary", settings.accentSecondary || "#1769ff");
+  document.querySelectorAll(".brand-copy strong").forEach(element => safeText(element, settings.siteName?.replace(/\s+Customs$/i, "") || "ZONE6IX"));
+  document.querySelectorAll(".brand-copy small").forEach(element => safeText(element, settings.studioLabel || "CUSTOM STUDIO"));
+  safeText(document.getElementById("siteStatusText"), tr(settings.statusText || "CUSTOM ORDERS OPEN"));
+  safeText(document.getElementById("heroLineOne"), tr(settings.heroLineOne || "YOUR GANG."));
+  safeText(document.getElementById("heroLineTwo"), tr(settings.heroLineTwo || "YOUR WORLD."));
+  safeText(document.getElementById("heroLineThree"), tr(settings.heroLineThree || "BUILT DIFFERENT."));
+  safeText(document.getElementById("heroLead"), tr(settings.heroLead || ""));
+  safeText(document.getElementById("studioHeading"), tr(settings.studioHeading || "More than a shop."));
+  safeText(document.getElementById("studioAccentHeading"), tr(settings.studioAccentHeading || "Your gang’s design department."));
+  safeText(document.getElementById("studioLead"), tr(settings.studioLead || ""));
+  safeText(document.getElementById("turfHeading"), tr(settings.turfHeading || "Build a place your gang can own."));
+  safeText(document.getElementById("turfLead"), tr(settings.turfLead || ""));
+  safeText(document.getElementById("weaponHeading"), tr(settings.weaponHeading || "Make the loadout part of the brand."));
+  safeText(document.getElementById("weaponLead"), tr(settings.weaponLead || ""));
+  safeText(document.getElementById("playerHeading"), tr(settings.playerHeading || "Make your individual player stand out."));
+  safeText(document.getElementById("playerLead"), tr(settings.playerLead || ""));
+  const eventHeading = document.getElementById("eventHeading");
+  if (eventHeading && settings.eventHeading) eventHeading.textContent = tr(settings.eventHeading);
+  safeText(document.getElementById("eventLead"), tr(settings.eventLead || ""));
+  safeText(document.getElementById("processHeading"), tr(settings.processHeading || "From idea to in-game."));
+  safeText(document.getElementById("processLead"), tr(settings.processLead || ""));
+  safeText(document.getElementById("orderHeading"), tr(settings.orderHeading || "Turn the idea into a real Zone6ix build."));
+  safeText(document.getElementById("orderLead"), tr(settings.orderLead || ""));
+  safeText(document.getElementById("primaryCtaText"), tr(settings.primaryCta || "Explore the studio"));
+  safeText(document.getElementById("secondaryCtaText"), tr(settings.secondaryCta || "Build an order"));
+  safeText(document.getElementById("footerDescription"), `Premium custom content for the Zone6ix Roblox experience. Contact: ${settings.contactEmail || "hainescasey07@gmail.com"}`);
+  const footerStatus = document.getElementById("footerStatus");
+  if (footerStatus) footerStatus.innerHTML = `<i></i> ${escapeHtml(settings.statusText || "Custom orders open")}`;
+  document.getElementById("siteStatusPill")?.classList.toggle("closed", settings.statusOpen === false);
+  footerStatus?.classList.toggle("closed", settings.statusOpen === false);
+
+  const announcement = document.getElementById("siteAnnouncement");
+  const dismissed = sessionStorage.getItem("zone6ixAnnouncementDismissed") === String(settings.announcementText || "");
+  if (announcement) {
+    safeText(document.getElementById("siteAnnouncementText"), tr(settings.announcementText || ""));
+    announcement.hidden = !settings.announcementText || dismissed;
+  }
+  safeText(document.getElementById("publicTermsText"), settings.termsText || "");
+  safeText(document.getElementById("publicPrivacyText"), settings.privacyText || "");
+  safeText(document.getElementById("publicRefundText"), settings.refundText || "");
+  safeText(document.getElementById("publicTokenRulesText"), settings.tokenRulesText || "");
+}
+
+function reconcileCart() {
+  const ids = Array.isArray(storedCart)
+    ? storedCart.map(item => typeof item === "string" ? item : item?.id).filter(Boolean)
+    : [];
+  cart = ids.map(id => products.find(product => product.id === id)).filter(Boolean);
+}
+
+async function loadSiteConfig() {
+  try {
+    const response = await fetch("/api/site-config", { headers: { Accept: "application/json" } });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Site configuration could not load.");
+    if (Array.isArray(data.products) && data.products.length) {
+      products = data.products.map(product => ({
+        ...product,
+        cash: Number(product.cashPricePence || 0) / 100,
+        robux: Number(product.robuxPrice || 0)
+      }));
+      ROBUX_PRODUCT_IDS = Object.fromEntries(products.map(product => [product.id, Number(product.robuxProductId || 0)]));
+    }
+    applySiteSettings(data.settings || {});
+    window.zone6ixSiteConfig = data;
+    document.dispatchEvent(new CustomEvent("zone6ix-site-config", { detail: data }));
+  } catch (error) {
+    console.error("Zone6ix site config fallback:", error);
+    applySiteSettings({});
+  }
+  reconcileCart();
+}
 
 async function waitForZone6ixAuth() {
   if (window.zone6ixAuth) {
@@ -224,12 +311,12 @@ function productArtwork(type) {
     "draco": weaponSvg("DRACO", true, true),
     "custom-gun": weaponSvg("YOUR GANG", false, true),
     "name": `<svg ${common}><rect x="58" y="65" width="304" height="110" rx="22" fill="#0d1e29" stroke="#62c8f8"/><path d="M85 98h43M85 116h28" stroke="#315f78" stroke-width="5"/><text x="150" y="132" fill="#a9e5ff" font-size="31" font-weight="900" letter-spacing="5">ZONE6IX</text><path d="M150 147h155" stroke="#3e9ac8"/><circle cx="318" cy="95" r="12" fill="#55bce9" opacity=".28" stroke="#73d1ff"/></svg>`,
-    "icon": `<svg ${common}><defs><linearGradient id="ii" x1="0" x2="1"><stop stop-color="#1c536e"/><stop offset="1" stop-color="#0d202c"/></linearGradient></defs><path d="m210 36 94 54v108l-94 54-94-54V90Z" fill="url(#ii)" stroke="#74d2ff" stroke-width="2"/><path d="m210 66 67 38v79l-67 39-67-39v-79Z" fill="#0b1821" stroke="#3a96c3"/><path d="M176 111h69l-31 29h33l-50 45h-26l34-33h-38z" fill="#77d4ff" opacity=".9"/><circle cx="210" cy="144" r="98" fill="none" stroke="#2b779e" stroke-dasharray="5 8" opacity=".4"/></svg>`,
-    "level": `<svg ${common}><path d="M72 180h276" stroke="#2a799f"/><rect x="82" y="125" width="256" height="56" rx="14" fill="#0d202b" stroke="#5fc4f3"/><text x="107" y="160" fill="#6e9bb3" font-size="13" font-weight="800">GANG LEVEL</text><text x="268" y="162" fill="#aee8ff" font-size="29" font-weight="950">100</text><path d="M97 196h226" stroke="#265f7d" stroke-width="8" stroke-linecap="round"/><path d="M97 196h176" stroke="#66caf8" stroke-width="8" stroke-linecap="round"/><path d="m210 40 16 31 34 5-25 24 6 34-31-16-31 16 6-34-25-24 34-5z" fill="#1d5672" stroke="#74d2ff"/></svg>`,
+    "emoji": `<svg ${common}><rect x="55" y="58" width="310" height="118" rx="24" fill="#0d1e29" stroke="#74d2ff"/><circle cx="122" cy="117" r="39" fill="#173f55" stroke="#6ccfff"/><text x="92" y="137" fill="#d9f5ff" font-size="49">🔥</text><text x="185" y="111" fill="#a9e6ff" font-size="22" font-weight="900" letter-spacing="3">PLAYER</text><text x="185" y="143" fill="#6ecfff" font-size="16" font-weight="800">CUSTOM EMOJI</text><path d="M70 196h280" stroke="#2e86b1" stroke-dasharray="6 8"/></svg>`,
+    "level": `<svg ${common}><path d="M72 180h276" stroke="#2a799f"/><rect x="82" y="125" width="256" height="56" rx="14" fill="#0d202b" stroke="#5fc4f3"/><text x="107" y="160" fill="#6e9bb3" font-size="13" font-weight="800">PLAYER LEVEL</text><text x="268" y="162" fill="#aee8ff" font-size="29" font-weight="950">100</text><path d="M97 196h226" stroke="#265f7d" stroke-width="8" stroke-linecap="round"/><path d="M97 196h176" stroke="#66caf8" stroke-width="8" stroke-linecap="round"/><path d="m210 40 16 31 34 5-25 24 6 34-31-16-31 16 6-34-25-24 34-5z" fill="#1d5672" stroke="#74d2ff"/></svg>`,
     "bundle": `<svg ${common}><rect x="46" y="76" width="328" height="102" rx="22" fill="#0c1b25" stroke="#6fd0ff"/><path d="m95 127 31-34 31 34-31 34z" fill="#215c77" stroke="#7ad5ff"/><text x="178" y="125" fill="#a9e6ff" font-size="25" font-weight="900" letter-spacing="4">ZONE6IX</text><text x="179" y="148" fill="#5f9fbe" font-size="11" font-weight="800" letter-spacing="3">LEVEL 100</text><path d="M57 194h306" stroke="#2e86b1" stroke-dasharray="6 8"/><circle cx="337" cy="101" r="8" fill="#6dcbf8" opacity=".65"/></svg>`
   };
 
-  return artwork[type] || artwork.icon;
+  return artwork[type] || artwork.name;
 }
 
 function weaponSvg(label, gold, longShape) {
@@ -265,15 +352,15 @@ function productCard(product) {
     <article class="product-card spotlight-card reveal ${product.featured ? "featured" : ""}" style="--accent:${product.accent}">
       <div class="product-visual">${productArtwork(product.art)}</div>
       <div class="product-body">
-        <span class="product-badge">${tr(product.badge)}</span>
-        <h3>${tr(product.name)}</h3>
-        <p class="product-description">${tr(product.description)}</p>
+        <span class="product-badge">${escapeHtml(tr(product.badge))}</span>
+        <h3>${escapeHtml(tr(product.name))}</h3>
+        <p class="product-description">${escapeHtml(tr(product.description))}</p>
         <div class="product-meta">
           <div><span>${tr("Card price")}</span><strong>£${product.cash.toFixed(2)}</strong></div>
           <div><span>${tr("Robux price")}</span><strong>${product.robux.toLocaleString(activeLocale())} R$</strong></div>
         </div>
         <button class="add-button" type="button" data-product-id="${product.id}">
-          <span>${tr("Add to basket")}</span>
+          <span>${escapeHtml(tr("Add to basket"))}</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
         </button>
       </div>
@@ -323,7 +410,8 @@ function removeFromCart(index) {
 }
 
 function saveCart() {
-  localStorage.setItem("zone6ixCart", JSON.stringify(cart));
+  localStorage.setItem("zone6ixCart", JSON.stringify(cart.map(item => item.id)));
+  storedCart = cart.map(item => item.id);
 }
 
 function renderCart() {
@@ -388,7 +476,10 @@ function buildReview() {
     robuxTotal: `${robuxTotal.toLocaleString(activeLocale())} R$`,
     selectedTotal,
     customRequest: document.getElementById("customRequest").value.trim(),
-    referenceLink: document.getElementById("referenceLink").value.trim() || "None provided"
+    referenceLink: document.getElementById("referenceLink").value.trim() || "None provided",
+    gangShirtLink: document.getElementById("gangShirtLink").value.trim() || "None provided",
+    gangPantsLink: document.getElementById("gangPantsLink").value.trim() || "None provided",
+    gangGroupLink: document.getElementById("gangGroupLink").value.trim() || "None provided"
   };
 
   const rows = [
@@ -400,7 +491,10 @@ function buildReview() {
     [tr("Products"), cart.map(item => tr(item.name)).join(", ")],
     [tr("Total"), currentOrderData.selectedTotal],
     [tr("Request"), currentOrderData.customRequest],
-    [tr("Reference link"), tr(currentOrderData.referenceLink)]
+    [tr("Reference link"), tr(currentOrderData.referenceLink)],
+    [tr("Gang shirt link"), tr(currentOrderData.gangShirtLink)],
+    [tr("Gang pants link"), tr(currentOrderData.gangPantsLink)],
+    [tr("Gang group link"), tr(currentOrderData.gangGroupLink)]
   ];
 
   document.getElementById("reviewContent").innerHTML = `
@@ -428,6 +522,13 @@ function setButtonLabel(button, text) {
   if (span) span.textContent = translated;
   else button.textContent = translated;
 }
+
+document.getElementById("dismissAnnouncement")?.addEventListener("click", () => {
+  const announcement = document.getElementById("siteAnnouncement");
+  const text = window.zone6ixSiteSettings?.announcementText || "";
+  sessionStorage.setItem("zone6ixAnnouncementDismissed", text);
+  if (announcement) announcement.hidden = true;
+});
 
 document.getElementById("openCartButton").addEventListener("click", openCart);
 document.getElementById("basketDockButton").addEventListener("click", openCart);
@@ -489,6 +590,9 @@ async function sendOrderEmail(orderStatus) {
     "Selected Total": currentOrderData.selectedTotal,
     "Custom Request": currentOrderData.customRequest,
     "Reference Link": currentOrderData.referenceLink,
+    "Gang Shirt Link": currentOrderData.gangShirtLink,
+    "Gang Pants Link": currentOrderData.gangPantsLink,
+    "Gang Group Link": currentOrderData.gangGroupLink,
     Website: "https://zone6ix-shop.pages.dev"
   });
 
@@ -519,7 +623,10 @@ async function createStripeCheckout() {
         gangName: currentOrderData.gangName,
         discordUsername: currentOrderData.discordUsername,
         customRequest: currentOrderData.customRequest,
-        referenceLink: currentOrderData.referenceLink
+        referenceLink: currentOrderData.referenceLink,
+        gangShirtLink: currentOrderData.gangShirtLink,
+        gangPantsLink: currentOrderData.gangPantsLink,
+        gangGroupLink: currentOrderData.gangGroupLink
       }
     })
   });
@@ -543,7 +650,10 @@ async function createSavedRobuxOrder() {
         gangName: currentOrderData.gangName,
         discordUsername: currentOrderData.discordUsername,
         customRequest: currentOrderData.customRequest,
-        referenceLink: currentOrderData.referenceLink
+        referenceLink: currentOrderData.referenceLink,
+        gangShirtLink: currentOrderData.gangShirtLink,
+        gangPantsLink: currentOrderData.gangPantsLink,
+        gangGroupLink: currentOrderData.gangGroupLink
       }
     })
   });
@@ -574,7 +684,7 @@ function createRobuxOrderCode() {
 }
 
 function createRobloxOrderUrl(orderCode) {
-  const productIds = cart.map(item => ROBUX_PRODUCT_IDS[item.id]);
+  const productIds = cart.map(item => Number(item.robuxProductId || ROBUX_PRODUCT_IDS[item.id]));
   if (productIds.length === 0 || productIds.some(productId => !productId)) {
     throw new Error("One or more products are missing their Roblox Product ID.");
   }
@@ -614,7 +724,7 @@ document.getElementById("paymentButton").addEventListener("click", async () => {
     localStorage.setItem("zone6ixLastRobuxOrder", JSON.stringify({
       orderCode,
       products: cart.map(item => item.name),
-      productIds: cart.map(item => ROBUX_PRODUCT_IDS[item.id]),
+      productIds: cart.map(item => Number(item.robuxProductId || ROBUX_PRODUCT_IDS[item.id])),
       robloxUsername: currentOrderData.robloxUsername,
       gangName: currentOrderData.gangName,
       createdAt: new Date().toISOString()
@@ -706,16 +816,30 @@ function activateGlobalMotion() {
 }
 
 document.addEventListener("zone6ix-language-change", () => {
+  applySiteSettings(window.zone6ixSiteSettings || {});
   renderProducts();
   renderCart();
   updatePaymentButtonLabel();
   if (reviewModal.classList.contains("open") && currentOrderData) buildReview();
 });
 
-renderProducts();
-renderCart();
-updatePaymentButtonLabel();
-activateReveals();
-activateSpotlights();
-activateGlobalMotion();
-handleStripeReturn();
+window.zone6ixRefreshPublicSite = async function zone6ixRefreshPublicSite() {
+  await loadSiteConfig();
+  renderProducts();
+  renderCart();
+  updatePaymentButtonLabel();
+  activateSpotlights();
+};
+
+async function initialiseZone6ixShop() {
+  await loadSiteConfig();
+  renderProducts();
+  renderCart();
+  updatePaymentButtonLabel();
+  activateReveals();
+  activateSpotlights();
+  activateGlobalMotion();
+  handleStripeReturn();
+}
+
+initialiseZone6ixShop();

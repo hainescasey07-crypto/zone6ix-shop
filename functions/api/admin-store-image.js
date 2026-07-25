@@ -1,20 +1,17 @@
 import {
   cleanText,
   errorResponse,
-  requireAdminUser,
+  requirePermission,
   json,
 } from "../_lib/common.js";
+import { logAdminAction } from "../_lib/site.js";
 
 const TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 1_500_000;
 
-async function requireAdmin(request, db) {
-  return requireAdminUser(request, db);
-}
-
 export async function onRequestPost({ request, env }) {
   try {
-    await requireAdmin(request, env.DB);
+    const admin = await requirePermission(request, env.DB, "manageStore");
     const form = await request.formData();
     const itemId = cleanText(form.get("itemId"), { name: "Item ID", min: 1, max: 100, required: true });
     const image = form.get("image");
@@ -40,6 +37,7 @@ export async function onRequestPost({ request, env }) {
       `).bind(`/api/store-image?id=${itemId}`, itemId)
     ]);
 
+    await logAdminAction(env.DB, admin, "event_item_image_uploaded", "store_item", itemId, { sizeBytes: image.size, mimeType: image.type });
     return json({ imageUrl: `/api/store-image?id=${encodeURIComponent(itemId)}&v=${Date.now()}` });
   } catch (error) {
     return errorResponse(error);
@@ -48,12 +46,13 @@ export async function onRequestPost({ request, env }) {
 
 export async function onRequestDelete({ request, env }) {
   try {
-    await requireAdmin(request, env.DB);
+    const admin = await requirePermission(request, env.DB, "manageStore");
     const itemId = cleanText(new URL(request.url).searchParams.get("itemId"), { name: "Item ID", min: 1, max: 100, required: true });
     await env.DB.batch([
       env.DB.prepare("DELETE FROM store_item_images WHERE item_id = ?").bind(itemId),
       env.DB.prepare("UPDATE store_items SET image_url = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(itemId)
     ]);
+    await logAdminAction(env.DB, admin, "event_item_image_removed", "store_item", itemId, {});
     return json({ removed: true });
   } catch (error) {
     return errorResponse(error);

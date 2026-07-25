@@ -14,7 +14,8 @@ async function accountResponse(env, user, profile = {}) {
     user: mapUserRow(row),
     isAdmin: access.isAdmin,
     isOwner: access.isOwner,
-    adminRole: access.role
+    adminRole: access.role,
+    permissions: access.permissions || {}
   });
 }
 

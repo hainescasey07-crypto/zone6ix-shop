@@ -1,14 +1,11 @@
 import {
   cleanText,
   errorResponse,
-  requireAdminUser,
+  requirePermission,
   json,
 } from "../_lib/common.js";
 import { getTokenSettings, tokenPublicSettings } from "../_lib/tokens.js";
-
-async function requireAdmin(request, db) {
-  return requireAdminUser(request, db);
-}
+import { logAdminAction } from "../_lib/site.js";
 
 function int(value, name, min, max) {
   const number = Number(value);
@@ -20,7 +17,7 @@ function int(value, name, min, max) {
 
 export async function onRequestGet({ request, env }) {
   try {
-    await requireAdmin(request, env.DB);
+    await requirePermission(request, env.DB, "manageTokens");
     return json({ settings: tokenPublicSettings(await getTokenSettings(env.DB)) });
   } catch (error) {
     return errorResponse(error);
@@ -29,7 +26,7 @@ export async function onRequestGet({ request, env }) {
 
 export async function onRequestPatch({ request, env }) {
   try {
-    const admin = await requireAdmin(request, env.DB);
+    const admin = await requirePermission(request, env.DB, "manageTokens");
     const body = await request.json().catch(() => ({}));
     const name = cleanText(body.name || "Zone Tokens", { name: "Token name", min: 2, max: 40, required: true });
     const symbol = cleanText(body.symbol || "ZT", { name: "Token symbol", min: 1, max: 8, required: true }).toUpperCase();
@@ -52,6 +49,9 @@ export async function onRequestPatch({ request, env }) {
       dailyLoginBonusMilli, purchaseBonusMilli, earningEnabled, admin.email
     ).run();
 
+    await logAdminAction(env.DB, admin, "token_settings_updated", "token_settings", "1", {
+      earnPerMinuteMilli, dailyLimitMinutes, dailyLoginBonusMilli, purchaseBonusMilli, earningEnabled
+    });
     return json({ settings: tokenPublicSettings(await getTokenSettings(env.DB)) });
   } catch (error) {
     return errorResponse(error);

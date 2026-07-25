@@ -1,5 +1,4 @@
 import {
-  aggregateProducts,
   errorResponse,
   json,
   makeOrderIdentity,
@@ -7,6 +6,7 @@ import {
   requireFirebaseUser,
   upsertUser
 } from "../_lib/common.js";
+import { aggregateShopProducts, ensureSiteSchema } from "../_lib/site.js";
 import { createCheckoutSession } from "../_lib/stripe.js";
 
 async function cleanupOrder(db, orderId) {
@@ -28,7 +28,8 @@ export async function onRequestPost({ request, env }) {
     const user = await requireFirebaseUser(request);
     const body = await request.json();
     const customer = parseCustomer(body);
-    const products = aggregateProducts(body.productIds);
+    await ensureSiteSchema(env.DB);
+    const products = await aggregateShopProducts(env.DB, body.productIds);
     const identity = makeOrderIdentity();
     orderId = identity.id;
 
@@ -43,8 +44,9 @@ export async function onRequestPost({ request, env }) {
           roblox_username, discord_username, gang_name,
           payment_method, payment_status, order_status,
           cash_total_pence, robux_total, custom_request, reference_link,
+          gang_shirt_link, gang_pants_link, gang_group_link,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'card', 'pending', 'awaiting_payment', ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'card', 'pending', 'awaiting_payment', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       `).bind(
         identity.id,
         identity.orderCode,
@@ -57,7 +59,10 @@ export async function onRequestPost({ request, env }) {
         cashTotal,
         robuxTotal,
         customer.customRequest,
-        customer.referenceLink
+        customer.referenceLink,
+        customer.gangShirtLink,
+        customer.gangPantsLink,
+        customer.gangGroupLink
       ),
       ...products.map(product => env.DB.prepare(`
         INSERT INTO order_items (

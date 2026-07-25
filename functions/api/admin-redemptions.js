@@ -1,14 +1,11 @@
 import {
   cleanText,
   errorResponse,
-  requireAdminUser,
+  requirePermission,
   json,
 } from "../_lib/common.js";
 import { REDEMPTION_STATUSES } from "../_lib/store.js";
-
-async function requireAdmin(request, db) {
-  return requireAdminUser(request, db);
-}
+import { logAdminAction } from "../_lib/site.js";
 
 async function getRedemption(db, id) {
   return db.prepare(`
@@ -24,7 +21,7 @@ async function getRedemption(db, id) {
 
 export async function onRequestGet({ request, env }) {
   try {
-    await requireAdmin(request, env.DB);
+    await requirePermission(request, env.DB, "manageRedemptions");
     const result = await env.DB.prepare(`
       SELECT r.*, i.name AS item_name, i.category, i.delivery_type, i.roblox_product_id,
              u.email, u.display_name, u.discord_username, u.gang_name,
@@ -43,7 +40,7 @@ export async function onRequestGet({ request, env }) {
 
 export async function onRequestPatch({ request, env }) {
   try {
-    const admin = await requireAdmin(request, env.DB);
+    const admin = await requirePermission(request, env.DB, "manageRedemptions");
     const body = await request.json().catch(() => ({}));
     const redemptionId = cleanText(body.redemptionId, { name: "Redemption ID", min: 1, max: 100, required: true });
     const status = cleanText(body.status, { name: "Status", min: 1, max: 30, required: true });
@@ -98,6 +95,7 @@ export async function onRequestPatch({ request, env }) {
     }
 
     await env.DB.batch(statements);
+    await logAdminAction(env.DB, admin, "redemption_updated", "redemption", redemptionId, { status });
     return json({ redemption: await getRedemption(env.DB, redemptionId) });
   } catch (error) {
     return errorResponse(error);
@@ -106,7 +104,7 @@ export async function onRequestPatch({ request, env }) {
 
 export async function onRequestDelete({ request, env }) {
   try {
-    const admin = await requireAdmin(request, env.DB);
+    const admin = await requirePermission(request, env.DB, "manageRedemptions");
     const url = new URL(request.url);
     const redemptionId = cleanText(url.searchParams.get("redemptionId"), {
       name: "Redemption ID",
@@ -120,7 +118,7 @@ export async function onRequestDelete({ request, env }) {
     const statements = [];
     const shouldRefund = existing.status !== "refunded";
     const amount = shouldRefund ? Math.max(0, Number(existing.total_price_milli || 0)) : 0;
-    const quantity = Math.max(1, Number(existing.quantity || 1));
+    const quantity = shouldRefund ? Math.max(1, Number(existing.quantity || 1)) : 0;
     const key = `redemption-delete-refund:${redemptionId}`;
 
     if (amount > 0) {
@@ -153,8 +151,8 @@ export async function onRequestDelete({ request, env }) {
       );
     }
 
-    statements.push(
-      env.DB.prepare(`
+    if (quantity > 0) {
+      statements.push(env.DB.prepare(`
         UPDATE store_items SET
           stock_remaining = CASE
             WHEN stock_remaining IS NULL THEN NULL
@@ -164,11 +162,12 @@ export async function onRequestDelete({ request, env }) {
           status = CASE WHEN status = 'sold_out' THEN 'live' ELSE status END,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).bind(quantity, quantity, existing.item_id),
-      env.DB.prepare("DELETE FROM store_redemptions WHERE id = ?").bind(redemptionId)
-    );
+      `).bind(quantity, quantity, existing.item_id));
+    }
+    statements.push(env.DB.prepare("DELETE FROM store_redemptions WHERE id = ?").bind(redemptionId));
 
     await env.DB.batch(statements);
+    await logAdminAction(env.DB, admin, "redemption_deleted", "redemption", redemptionId, { refundedMilli: amount, restoredStock: quantity });
     return json({
       deleted: true,
       redemptionId,

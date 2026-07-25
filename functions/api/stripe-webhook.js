@@ -19,7 +19,10 @@ async function findOrder(env, session) {
 }
 
 async function markPaid(env, order, session) {
-  if (order.payment_status === "paid") return;
+  if (order.payment_status === "paid") {
+    await awardPurchaseBonus(env.DB, order, "stripe");
+    return;
+  }
   await env.DB.batch([
     env.DB.prepare(`
       UPDATE orders SET

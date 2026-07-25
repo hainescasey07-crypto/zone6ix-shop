@@ -1,5 +1,6 @@
 import { errorResponse, json, requireFirebaseUser } from "../_lib/common.js";
 import { retrieveCheckoutSession } from "../_lib/stripe.js";
+import { awardPurchaseBonus } from "../_lib/tokens.js";
 
 export async function onRequestGet({ request, env }) {
   try {
@@ -32,6 +33,7 @@ export async function onRequestGet({ request, env }) {
           ) VALUES (?, 'paid', 'Stripe payment confirmed. Your order is ready for review.', 1, 'stripe')
         `).bind(order.id)
       ]);
+      await awardPurchaseBonus(env.DB, order, "stripe");
     }
 
     return json({

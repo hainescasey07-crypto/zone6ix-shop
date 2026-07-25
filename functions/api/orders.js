@@ -1,5 +1,4 @@
 import {
-  aggregateProducts,
   errorResponse,
   hydrateOrders,
   json,
@@ -8,10 +7,12 @@ import {
   requireFirebaseUser,
   upsertUser
 } from "../_lib/common.js";
+import { aggregateShopProducts, ensureSiteSchema } from "../_lib/site.js";
 
 export async function onRequestGet({ request, env }) {
   try {
     const user = await requireFirebaseUser(request);
+    await ensureSiteSchema(env.DB);
     const result = await env.DB.prepare(`
       SELECT * FROM orders
       WHERE firebase_uid = ?
@@ -31,7 +32,8 @@ export async function onRequestPost({ request, env }) {
     if (body.paymentMethod !== "robux") throw Object.assign(new Error("This endpoint only creates Robux orders."), { status: 400 });
 
     const customer = parseCustomer(body);
-    const products = aggregateProducts(body.productIds);
+    await ensureSiteSchema(env.DB);
+    const products = await aggregateShopProducts(env.DB, body.productIds);
     const { id, orderCode } = makeOrderIdentity();
     const cashTotal = products.reduce((sum, product) => sum + product.cashPence * product.quantity, 0);
     const robuxTotal = products.reduce((sum, product) => sum + product.robux * product.quantity, 0);
@@ -45,8 +47,9 @@ export async function onRequestPost({ request, env }) {
           roblox_username, discord_username, gang_name,
           payment_method, payment_status, order_status,
           cash_total_pence, robux_total, custom_request, reference_link,
+          gang_shirt_link, gang_pants_link, gang_group_link,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'robux', 'robux_pending', 'awaiting_payment', ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'robux', 'robux_pending', 'awaiting_payment', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       `).bind(
         id,
         orderCode,
@@ -59,7 +62,10 @@ export async function onRequestPost({ request, env }) {
         cashTotal,
         robuxTotal,
         customer.customRequest,
-        customer.referenceLink
+        customer.referenceLink,
+        customer.gangShirtLink,
+        customer.gangPantsLink,
+        customer.gangGroupLink
       ),
       ...products.map(product => env.DB.prepare(`
         INSERT INTO order_items (

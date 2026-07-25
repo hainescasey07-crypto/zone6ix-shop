@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Zone6ix Customs — premium custom turfs, gang weapons and identity upgrades.">
+  <meta name="description" content="Zone6ix Customs — premium custom turfs, gang weapons and individual player customisation.">
   <meta name="theme-color" content="#05070a">
   <title>Zone6ix Customs</title>
-  <link rel="icon" href="/favicon.ico?v=3" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=3">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=3">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3">
-  <link rel="manifest" href="/site.webmanifest?v=3">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="/favicon.ico?v=4" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4">
+  <link rel="manifest" href="/site.webmanifest?v=4">
+  <link rel="stylesheet" href="styles.css?v=perfect-launch-2">
 </head>
 <body>
   <div class="scroll-progress" id="scrollProgress"></div>
@@ -37,7 +37,7 @@
       <a href="#collections">Collections</a>
       <a href="#turfs">Turfs</a>
       <a href="#guns">Weapons</a>
-      <a href="#identity">Identity</a>
+      <a href="#identity">Player</a>
       <a href="#event-store">Event Store</a>
       <a href="#process">Process</a>
     </nav>
@@ -106,33 +106,35 @@
     </div>
   </header>
 
+  <div class="site-announcement" id="siteAnnouncement" hidden><span></span><p id="siteAnnouncementText"></p><button type="button" id="dismissAnnouncement" aria-label="Dismiss announcement">×</button></div>
+
   <main id="home">
     <section class="hero section-shell">
       <div class="hero-grid">
         <div class="hero-copy reveal">
-          <div class="status-pill">
+          <div class="status-pill" id="siteStatusPill">
             <span class="live-dot"></span>
-            CUSTOM ORDERS OPEN
+            <span id="siteStatusText">CUSTOM ORDERS OPEN</span>
             <b>ZONE6IX</b>
           </div>
 
           <h1>
-            YOUR GANG.
-            <span class="outline-word">YOUR WORLD.</span>
-            <em>BUILT DIFFERENT.</em>
+            <span id="heroLineOne">YOUR GANG.</span>
+            <span class="outline-word" id="heroLineTwo">YOUR WORLD.</span>
+            <em id="heroLineThree">BUILT DIFFERENT.</em>
           </h1>
 
-          <p class="hero-lead">
-            Premium custom turfs, exclusive weapons and full gang identity systems designed for the Zone6ix experience.
+          <p class="hero-lead" id="heroLead">
+            Premium custom turfs, exclusive weapons and individual player customisation designed for the Zone6ix experience.
           </p>
 
           <div class="hero-actions">
             <a class="primary-cta neon-edge" href="#collections">
-              <span>Explore the studio</span>
+              <span id="primaryCtaText">Explore the studio</span>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </a>
             <button class="text-cta" type="button" data-scroll-order>
-              Build an order
+              <b id="secondaryCtaText">Build an order</b>
               <span></span>
             </button>
           </div>
@@ -176,7 +178,7 @@
             </div>
             <div class="scene-platform"></div>
             <div class="scene-label label-a">CUSTOM TURF</div>
-            <div class="scene-label label-b">GANG IDENTITY</div>
+            <div class="scene-label label-b">PLAYER CUSTOMISATION</div>
             <div class="scene-label label-c">EXCLUSIVE LOADOUT</div>
           </div>
 
@@ -194,8 +196,8 @@
 
       <div class="hero-ticker" aria-label="Zone6ix services">
         <div class="ticker-track">
-          <span>Custom Turfs</span><i></i><span>Exclusive Weapons</span><i></i><span>Gang Identity</span><i></i><span>Secure Stripe Checkout</span><i></i><span>Robux Payment</span><i></i><span>Built for Zone6ix</span><i></i>
-          <span>Custom Turfs</span><i></i><span>Exclusive Weapons</span><i></i><span>Gang Identity</span><i></i><span>Secure Stripe Checkout</span><i></i><span>Robux Payment</span><i></i><span>Built for Zone6ix</span><i></i>
+          <span>Custom Turfs</span><i></i><span>Exclusive Weapons</span><i></i><span>Player Customisation</span><i></i><span>Secure Stripe Checkout</span><i></i><span>Robux Payment</span><i></i><span>Built for Zone6ix</span><i></i>
+          <span>Custom Turfs</span><i></i><span>Exclusive Weapons</span><i></i><span>Player Customisation</span><i></i><span>Secure Stripe Checkout</span><i></i><span>Robux Payment</span><i></i><span>Built for Zone6ix</span><i></i>
         </div>
       </div>
     </section>
@@ -203,8 +205,8 @@
     <section class="studio-intro section-shell reveal" id="collections">
       <div class="section-kicker"><span>01</span> THE STUDIO</div>
       <div class="intro-grid">
-        <h2>More than a shop.<br><em>Your gang’s design department.</em></h2>
-        <p>Choose a foundation, add the details, then send your references. Every order is built around your gang instead of copied from a generic preset.</p>
+        <h2><span id="studioHeading">More than a shop.</span><br><em id="studioAccentHeading">Your gang’s design department.</em></h2>
+        <p id="studioLead">Choose a foundation, add the details, then send your references. Every order is built around your gang instead of copied from a generic preset.</p>
       </div>
 
       <div class="collection-nav">
@@ -240,9 +242,9 @@
             <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 7 51 18v27L32 57 13 45V18L32 7Z"/><path d="m23 33 6 6 13-15"/></svg>
           </div>
           <div>
-            <small>BRANDING</small>
-            <h3>Gang Identity</h3>
-            <p>Name, icon and level styling that makes your gang recognisable.</p>
+            <small>PLAYER UPGRADES</small>
+            <h3>Player Customisation</h3>
+            <p>Individual player name, emoji and level styling made for one character.</p>
           </div>
           <svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
@@ -253,9 +255,9 @@
       <div class="section-top reveal">
         <div>
           <div class="section-kicker"><span>02</span> CUSTOM TURFS</div>
-          <h2>Build a place your gang can own.</h2>
+          <h2 id="turfHeading">Build a place your gang can own.</h2>
         </div>
-        <p>Pick the scale first. The logo, colours, rooms, layout and references are supplied during checkout.</p>
+        <p id="turfLead">Pick the scale first. The logo, colours, rooms, layout and references are supplied during checkout.</p>
       </div>
       <div class="product-grid turf-grid" id="turfProducts"></div>
     </section>
@@ -264,7 +266,7 @@
       <div class="showcase-copy">
         <small>FEATURED CONFIGURATION</small>
         <h2>The full gang headquarters.</h2>
-        <p>Large turf, second floor, custom weapon and complete identity package — designed as one consistent gang system.</p>
+        <p>Large turf, second floor and custom weapon for the gang, plus an individual player customisation package.</p>
         <button class="primary-cta neon-edge" type="button" data-scroll-order>
           <span>Build the full setup</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -273,7 +275,7 @@
       <div class="showcase-stack" aria-hidden="true">
         <article class="stack-card stack-one"><span>01</span><strong>TURF</strong><small>Large headquarters</small></article>
         <article class="stack-card stack-two"><span>02</span><strong>LOADOUT</strong><small>Fully custom weapon</small></article>
-        <article class="stack-card stack-three"><span>03</span><strong>IDENTITY</strong><small>Name, icon and level</small></article>
+        <article class="stack-card stack-three"><span>03</span><strong>PLAYER</strong><small>Name, emoji and level</small></article>
       </div>
     </section>
 
@@ -281,8 +283,8 @@
       <div class="section-shell">
         <div class="weapon-heading reveal">
           <div class="section-kicker light"><span>03</span> WEAPON LAB</div>
-          <h2>Make the loadout part of the brand.</h2>
-          <p>Choose a ready-made metallic finish or commission a weapon built around your colours, logo and 3D writing.</p>
+          <h2 id="weaponHeading">Make the loadout part of the brand.</h2>
+          <p id="weaponLead">Choose a ready-made metallic finish or commission a weapon built around your colours, logo and 3D writing.</p>
         </div>
 
         <div class="weapon-display reveal" data-delay="80" aria-hidden="true">
@@ -319,12 +321,13 @@
     <section class="product-section identity-section section-shell" id="identity">
       <div class="identity-header reveal">
         <div>
-          <div class="section-kicker"><span>04</span> IDENTITY SYSTEM</div>
-          <h2>Recognition before they even read the name.</h2>
+          <div class="section-kicker"><span>04</span> PLAYER CUSTOMISATION</div>
+          <h2 id="playerHeading">Make your individual player stand out.</h2>
+          <p id="playerLead" class="identity-lead">Customise one player with a name, Roblox-supported emoji and level display.</p>
         </div>
         <div class="identity-preview" aria-hidden="true">
           <span class="id-emblem">Z6</span>
-          <div><small>CREW IDENTIFIER</small><strong>ZONE6IX</strong><b>LEVEL 100</b></div>
+          <div><small>PLAYER DISPLAY</small><strong>ZONE6IX 🔥</strong><b>LEVEL 100</b></div>
         </div>
       </div>
       <div class="product-grid identity-grid" id="identityProducts"></div>
@@ -334,8 +337,8 @@
       <div class="event-store-head reveal">
         <div>
           <div class="section-kicker"><span>LIVE DROPS</span><i></i></div>
-          <h2>THE ZONE6IX <em>EVENT STORE.</em></h2>
-          <p>Stay active, earn Zone Tokens and unlock limited items released directly by the Zone6ix team.</p>
+          <h2 id="eventHeading">THE ZONE6IX <em>EVENT STORE.</em></h2>
+          <p id="eventLead">Stay active, earn Zone Tokens and unlock limited items released directly by the Zone6ix team.</p>
         </div>
         <div class="event-wallet-preview" id="eventWalletPreview">
           <span class="event-wallet-icon"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/><path d="m8.5 9 7-3-4 5h4l-7 6 3-5h-4l1-3Z"/></svg></span>
@@ -362,9 +365,9 @@
       <div class="section-top reveal">
         <div>
           <div class="section-kicker"><span>05</span> HOW IT WORKS</div>
-          <h2>From idea to in-game.</h2>
+          <h2 id="processHeading">From idea to in-game.</h2>
         </div>
-        <p>A simple order flow with enough detail for your build to come out how you pictured it.</p>
+        <p id="processLead">A simple order flow with enough detail for your build to come out how you pictured it.</p>
       </div>
 
       <div class="process-line reveal">
@@ -399,8 +402,8 @@
       <div class="order-shell reveal">
         <aside class="order-aside">
           <div class="section-kicker light"><span>06</span> START THE ORDER</div>
-          <h2>Turn the idea into a real Zone6ix build.</h2>
-          <p>Your basket controls the products. This form tells us who the order belongs to and exactly what should be created.</p>
+          <h2 id="orderHeading">Turn the idea into a real Zone6ix build.</h2>
+          <p id="orderLead">Your basket controls the products. This form tells us who the order belongs to and exactly what should be created.</p>
 
           <div class="order-benefits">
             <article>
@@ -462,12 +465,27 @@
 
           <label class="full-field">
             <span>Describe the build</span>
-            <textarea id="customRequest" name="custom_request" rows="6" placeholder="Tell us the colours, layout, weapon texture, writing, icon, level or any other detail..." required></textarea>
+            <textarea id="customRequest" name="custom_request" rows="6" placeholder="Tell us the colours, layout, weapon texture, writing, player emoji, player level or any other detail..." required></textarea>
           </label>
 
           <label class="full-field">
             <span>Reference image link <small>optional</small></span>
             <input type="url" id="referenceLink" name="reference_link" placeholder="Discord, Imgur or another image link">
+          </label>
+
+          <div class="form-grid gang-link-grid">
+            <label>
+              <span>Gang shirt link <small>optional</small></span>
+              <input type="url" id="gangShirtLink" name="gang_shirt_link" placeholder="Roblox shirt URL">
+            </label>
+            <label>
+              <span>Gang pants link <small>optional</small></span>
+              <input type="url" id="gangPantsLink" name="gang_pants_link" placeholder="Roblox pants URL">
+            </label>
+          </div>
+          <label class="full-field">
+            <span>Gang group link <small>optional</small></span>
+            <input type="url" id="gangGroupLink" name="gang_group_link" placeholder="Roblox group URL">
           </label>
 
           <div class="order-account-state" id="orderAccountState">
@@ -517,9 +535,9 @@
         <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 56 56"><path d="M8 10h40L31 28h17L24 48H8l17-19H8z"/></svg></span>
         <span class="brand-copy"><strong>ZONE6IX</strong><small>CUSTOM STUDIO</small></span>
       </a>
-      <p>Premium custom content for the Zone6ix Roblox experience.</p>
-      <div class="footer-links"><a href="#collections">Collections</a><a href="#process">Process</a><a href="#order">Order</a></div>
-      <span class="footer-status"><i></i> Custom orders open</span>
+      <p id="footerDescription">Premium custom content for the Zone6ix Roblox experience.</p>
+      <div class="footer-links"><a href="#collections">Collections</a><a href="#process">Process</a><a href="#order">Order</a><button type="button" data-legal-tab="terms">Terms</button><button type="button" data-legal-tab="privacy">Privacy</button><button type="button" data-legal-tab="refunds">Refunds</button></div>
+      <span class="footer-status" id="footerStatus"><i></i> Custom orders open</span>
     </div>
   </footer>
 
@@ -541,7 +559,7 @@
     <div class="cart-empty" id="cartEmpty">
       <div class="empty-icon"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M10 14h7l6 28h25l6-19H20"/><circle cx="28" cy="51" r="3"/><circle cx="47" cy="51" r="3"/></svg></div>
       <strong>Your build is empty.</strong>
-      <p>Add a turf, weapon or identity upgrade to begin.</p>
+      <p>Add a turf, weapon or player upgrade to begin.</p>
     </div>
     <div class="cart-summary">
       <div><span>Card total</span><strong id="cashTotal">£0.00</strong></div>
@@ -576,6 +594,20 @@
   </section>
 
   <div class="dashboard-backdrop" id="dashboardBackdrop" aria-hidden="true"></div>
+
+  <section class="dashboard-modal legal-dashboard" id="legalDashboard" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="legalDashboardTitle">
+    <header class="dashboard-header">
+      <div><small>ZONE6IX INFORMATION</small><h2 id="legalDashboardTitle">Terms & policies</h2></div>
+      <button class="icon-button" id="closeLegalDashboard" type="button" aria-label="Close policies"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    </header>
+    <div class="legal-dashboard-body">
+      <nav class="legal-tabs"><button class="active" type="button" data-legal-panel="terms">Terms</button><button type="button" data-legal-panel="privacy">Privacy</button><button type="button" data-legal-panel="refunds">Refunds</button><button type="button" data-legal-panel="tokens">Token rules</button></nav>
+      <article class="legal-panel active" id="legalPanelTerms"><h3>Terms of service</h3><p id="publicTermsText"></p></article>
+      <article class="legal-panel" id="legalPanelPrivacy"><h3>Privacy notice</h3><p id="publicPrivacyText"></p></article>
+      <article class="legal-panel" id="legalPanelRefunds"><h3>Refund policy</h3><p id="publicRefundText"></p></article>
+      <article class="legal-panel" id="legalPanelTokens"><h3>Zone Token rules</h3><p id="publicTokenRulesText"></p></article>
+    </div>
+  </section>
 
   <section class="dashboard-modal customer-dashboard" id="ordersDashboard" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="ordersDashboardTitle">
     <header class="dashboard-header">
@@ -679,6 +711,8 @@
       <button type="button" data-admin-tab="store"><svg viewBox="0 0 24 24"><path d="M4 8h16v12H4zM3 4h18l-1 4H4L3 4Z"/></svg><span>Event Store</span></button>
       <button type="button" data-admin-tab="redemptions"><svg viewBox="0 0 24 24"><path d="M4 6h16v14H4zM8 3v6M16 3v6M4 10h16"/></svg><span>Redemptions</span></button>
       <button type="button" data-admin-tab="tokens"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/></svg><span>Token settings</span></button>
+      <button id="adminSiteTab" type="button" data-admin-tab="site"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/><path d="M17 15h3v5h-5v-3"/></svg><span>Site & pricing</span></button>
+      <button id="adminSecurityTab" type="button" data-admin-tab="security"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.7 2.8 8.3 7 10 4.2-1.7 7-5.3 7-10V6l-7-3Z"/><path d="M9 12h6"/></svg><span>Logs & exports</span></button>
       <button type="button" data-admin-tab="customers"><svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm10-1a3 3 0 1 0 0-6M2 21a7 7 0 0 1 14 0m1-7a5 5 0 0 1 5 5"/></svg><span>Customers</span></button>
       <button id="adminAccessTab" hidden type="button" data-admin-tab="admins"><svg viewBox="0 0 24 24"><path d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M4 21a8 8 0 0 1 16 0M19 3v6M16 6h6"/></svg><span>Admins</span></button>
     </nav>
@@ -740,6 +774,93 @@
       <div class="token-settings-layout"><section class="token-settings-card"><div class="admin-panel-head"><div><small>REWARD ECONOMY</small><h3>Zone Token settings</h3></div><span class="settings-live-badge"><i></i>Updates live instantly</span></div><form id="tokenSettingsForm" class="token-settings-form"><div class="admin-form-grid"><label><span>Token name</span><input id="settingTokenName" maxlength="40" required></label><label><span>Symbol</span><input id="settingTokenSymbol" maxlength="8" required></label><label><span>Tokens per active minute</span><input id="settingEarnRate" type="number" min="0" step="0.001" required></label><label><span>Daily active-minute limit</span><input id="settingDailyLimit" type="number" min="0" max="1440" step="1" required></label><label><span>Daily login bonus</span><input id="settingDailyBonus" type="number" min="0" step="0.001" required></label><label><span>Paid purchase bonus</span><input id="settingPurchaseBonus" type="number" min="0" step="0.001" required></label></div><label class="admin-toggle"><input id="settingEarningEnabled" type="checkbox"><span></span><div><strong>Active-time earning enabled</strong><small>Turn this off to pause all new active-time rewards.</small></div></label><div class="admin-save-row"><button class="dashboard-primary" type="submit">Save token settings</button><span id="tokenSettingsMessage"></span></div></form></section><aside class="economy-preview"><small>LIVE PREVIEW</small><strong id="economyPreviewRate">0.5 ZT / minute</strong><p id="economyPreviewDaily">Up to 60 ZT from active time each day</p><div><span>Daily login</span><b id="economyPreviewLogin">10 ZT</b></div><div><span>Paid order</span><b id="economyPreviewPurchase">25 ZT</b></div></aside></div>
     </div>
 
+    <div class="admin-tab-panel" id="adminPanelSite" data-admin-panel="site">
+      <div class="site-manager-shell">
+        <section class="site-manager-card">
+          <div class="admin-panel-head"><div><small>LIVE WEBSITE CONTROL</small><h3>Site appearance and wording</h3></div><span class="settings-live-badge"><i></i>No GitHub edit needed</span></div>
+          <form id="siteSettingsForm" class="site-settings-form">
+            <div class="admin-form-grid">
+              <label><span>Site name</span><input id="siteSettingName" maxlength="60" required></label>
+              <label><span>Studio label</span><input id="siteSettingStudio" maxlength="40" required></label>
+              <label><span>Order status text</span><input id="siteSettingStatus" maxlength="60" required></label>
+              <label><span>Contact email</span><input id="siteSettingEmail" type="email" maxlength="254" required></label>
+              <label><span>Hero line 1</span><input id="siteSettingHero1" maxlength="60" required></label>
+              <label><span>Hero line 2</span><input id="siteSettingHero2" maxlength="60" required></label>
+              <label><span>Hero line 3</span><input id="siteSettingHero3" maxlength="60" required></label>
+              <label><span>Announcement</span><input id="siteSettingAnnouncement" maxlength="180"></label>
+              <label><span>Primary accent</span><input id="siteSettingAccent1" type="color"></label>
+              <label><span>Secondary accent</span><input id="siteSettingAccent2" type="color"></label>
+              <label><span>Primary button</span><input id="siteSettingPrimaryCta" maxlength="40" required></label>
+              <label><span>Secondary button</span><input id="siteSettingSecondaryCta" maxlength="40" required></label>
+            </div>
+            <label><span>Hero description</span><textarea id="siteSettingLead" maxlength="400" required></textarea></label>
+            <details class="site-content-details">
+              <summary>Section headings and descriptions</summary>
+              <div class="admin-form-grid">
+                <label><span>Studio heading</span><input id="siteSettingStudioHeading" maxlength="100" required></label>
+                <label><span>Studio highlighted line</span><input id="siteSettingStudioAccent" maxlength="120" required></label>
+                <label class="wide"><span>Studio description</span><textarea id="siteSettingStudioLead" maxlength="500" required></textarea></label>
+                <label><span>Turf heading</span><input id="siteSettingTurfHeading" maxlength="120" required></label>
+                <label><span>Weapon heading</span><input id="siteSettingWeaponHeading" maxlength="120" required></label>
+                <label class="wide"><span>Turf description</span><textarea id="siteSettingTurfLead" maxlength="500" required></textarea></label>
+                <label class="wide"><span>Weapon description</span><textarea id="siteSettingWeaponLead" maxlength="500" required></textarea></label>
+                <label><span>Player heading</span><input id="siteSettingPlayerHeading" maxlength="120" required></label>
+                <label><span>Event Store heading</span><input id="siteSettingEventHeading" maxlength="120" required></label>
+                <label class="wide"><span>Player description</span><textarea id="siteSettingPlayerLead" maxlength="500" required></textarea></label>
+                <label class="wide"><span>Event Store description</span><textarea id="siteSettingEventLead" maxlength="500" required></textarea></label>
+                <label><span>Process heading</span><input id="siteSettingProcessHeading" maxlength="120" required></label>
+                <label><span>Order heading</span><input id="siteSettingOrderHeading" maxlength="120" required></label>
+                <label class="wide"><span>Process description</span><textarea id="siteSettingProcessLead" maxlength="500" required></textarea></label>
+                <label class="wide"><span>Order description</span><textarea id="siteSettingOrderLead" maxlength="500" required></textarea></label>
+              </div>
+            </details>
+            <label class="admin-toggle"><input id="siteSettingOpen" type="checkbox"><span></span><div><strong>Custom orders open</strong><small>Controls the live status shown publicly.</small></div></label>
+            <div class="admin-save-row"><button class="dashboard-primary" type="submit">Publish site changes</button><span id="siteSettingsMessage"></span></div>
+          </form>
+        </section>
+
+        <section class="site-manager-card core-product-manager">
+          <div class="admin-panel-head"><div><small>CORE SHOP CATALOGUE</small><h3>Products and prices</h3></div><button class="dashboard-refresh" id="refreshSiteManager" type="button">Refresh</button></div>
+          <p class="manager-help">Change names, descriptions, card prices, displayed Robux prices and visibility. Card prices update instantly. Keep every Robux amount and Developer Product ID matched to Roblox Creator Dashboard and your Zone6ix receipt scripts.</p>
+          <div class="core-products-list" id="coreProductsList"><div class="dashboard-loading"><i></i><span>Loading products…</span></div></div>
+        </section>
+
+        <section class="site-manager-card legal-manager">
+          <div class="admin-panel-head"><div><small>LEGAL & CUSTOMER RULES</small><h3>Public policies</h3></div></div>
+          <form id="legalSettingsForm" class="legal-settings-form">
+            <label><span>Terms of service</span><textarea id="siteTermsText" maxlength="12000" required></textarea></label>
+            <label><span>Privacy notice</span><textarea id="sitePrivacyText" maxlength="12000" required></textarea></label>
+            <label><span>Refund policy</span><textarea id="siteRefundText" maxlength="12000" required></textarea></label>
+            <label><span>Zone Token rules</span><textarea id="siteTokenRulesText" maxlength="12000" required></textarea></label>
+            <div class="admin-save-row"><button class="dashboard-primary" type="submit">Publish policies</button><span id="legalSettingsMessage"></span></div>
+          </form>
+        </section>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel" id="adminPanelSecurity" data-admin-panel="security">
+      <div class="security-manager-grid">
+        <section class="site-manager-card">
+          <div class="admin-panel-head"><div><small>DATA PORTABILITY</small><h3>Download CSV backups</h3></div></div>
+          <p class="manager-help">Download a readable backup before major changes or whenever you want an offline copy.</p>
+          <div class="export-button-grid">
+            <button type="button" data-export-type="orders">Export orders</button>
+            <button type="button" data-export-type="customers">Export customers</button>
+            <button type="button" data-export-type="redemptions">Export redemptions</button>
+            <button type="button" data-export-type="products">Export core products</button>
+            <button type="button" data-export-type="store">Export Event Store</button>
+            <button type="button" data-export-type="ledger">Export token ledger</button>
+            <button type="button" data-export-type="audit">Export audit log</button>
+          </div>
+          <p id="exportMessage" class="admin-access-message"></p>
+        </section>
+        <section class="site-manager-card audit-manager">
+          <div class="admin-panel-head"><div><small>ADMIN ACTIVITY</small><h3>Audit log</h3></div><button class="dashboard-refresh" id="refreshAuditLog" type="button">Refresh</button></div>
+          <div class="audit-list" id="auditLogList"><div class="dashboard-loading"><i></i><span>Loading activity…</span></div></div>
+        </section>
+      </div>
+    </div>
+
     <div class="admin-tab-panel" id="adminPanelCustomers" data-admin-panel="customers">
       <div class="customers-admin-panel"><div class="admin-panel-head"><div><small>ACCOUNT MANAGEMENT</small><h3>Customers and wallets</h3></div><button class="dashboard-refresh" id="refreshCustomers" type="button">Refresh</button></div><div class="store-admin-filters"><input id="customerSearch" type="search" placeholder="Search name, email, Roblox, Discord or gang"></div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>Roblox / Gang</th><th>Balance</th><th>Orders</th><th>Redemptions</th><th>Adjust</th></tr></thead><tbody id="customerTableBody"><tr><td colspan="6"><div class="dashboard-loading"><i></i><span>Loading customers…</span></div></td></tr></tbody></table></div></div>
     </div>
@@ -753,11 +874,12 @@
           </div>
           <form id="adminAccessForm" class="admin-access-form">
             <label><span>Google account email</span><input id="newAdminEmail" type="email" maxlength="254" autocomplete="off" placeholder="admin@example.com" required></label>
+            <label><span>Access role</span><select id="newAdminRole"><option value="manager">Manager — almost everything</option><option value="orders">Orders admin</option><option value="store">Store admin</option><option value="support">Support — view only</option></select></label>
             <button class="dashboard-primary" id="addAdminButton" type="submit">Give admin access</button>
           </form>
           <div class="admin-access-warning">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5M12 17h.01"/></svg>
-            <p><strong>Only add people you fully trust.</strong> Added admins can manage orders, rewards, redemptions, token settings and customer balances. They cannot add or remove other admins.</p>
+            <p><strong>Only add people you fully trust.</strong> Choose the smallest role they need. Only the owner can add, remove or change administrators.</p>
           </div>
           <p class="admin-access-message" id="adminAccessMessage" aria-live="polite"></p>
         </section>
@@ -775,9 +897,10 @@
     </div>
   </section>
 
-  <script src="language.js?v=delete-tools-1"></script>
-  <script type="module" src="account.js?v=delete-tools-1"></script>
-  <script type="module" src="tokens-store.js?v=delete-tools-1"></script>
-  <script src="script.js?v=delete-tools-1"></script>
+  <script src="language.js?v=perfect-launch-2"></script>
+  <script type="module" src="account.js?v=perfect-launch-2"></script>
+  <script type="module" src="tokens-store.js?v=perfect-launch-2"></script>
+  <script type="module" src="site-manager.js?v=perfect-launch-2"></script>
+  <script src="script.js?v=perfect-launch-2"></script>
 </body>
 </html>

@@ -10,10 +10,10 @@ export const PRODUCTS = {
   "gold-uzi": { name: "Gold Uzi", cashPence: 300, robux: 400 },
   "gold-draco": { name: "Gold Draco", cashPence: 400, robux: 500 },
   "custom-gun": { name: "Fully Custom Gun", cashPence: 700, robux: 900 },
-  "custom-name": { name: "Custom Name", cashPence: 200, robux: 250 },
-  "custom-emoji": { name: "Custom Icon", cashPence: 200, robux: 250 },
-  "custom-level": { name: "Custom Level", cashPence: 200, robux: 250 },
-  "identity-bundle": { name: "Identity Bundle", cashPence: 500, robux: 600 }
+  "custom-name": { name: "Custom Player Name", cashPence: 200, robux: 250 },
+  "custom-emoji": { name: "Custom Player Emoji", cashPence: 200, robux: 250 },
+  "custom-level": { name: "Custom Player Level", cashPence: 200, robux: 250 },
+  "identity-bundle": { name: "Player Customisation Bundle", cashPence: 500, robux: 600 }
 };
 
 export function json(data, status = 200, extraHeaders = {}) {
@@ -96,6 +96,39 @@ export async function requireFirebaseUser(request) {
 
 let adminSchemaPromise = null;
 
+export const ROLE_PERMISSIONS = {
+  owner: {
+    viewOrders: true, manageOrders: true, deleteOrders: true,
+    manageStore: true, manageRedemptions: true, manageTokens: true,
+    viewCustomers: true, manageCustomers: true, manageSite: true,
+    exportData: true, viewAudit: true, manageAdmins: true
+  },
+  manager: {
+    viewOrders: true, manageOrders: true, deleteOrders: true,
+    manageStore: true, manageRedemptions: true, manageTokens: true,
+    viewCustomers: true, manageCustomers: true, manageSite: true,
+    exportData: true, viewAudit: true, manageAdmins: false
+  },
+  orders: {
+    viewOrders: true, manageOrders: true, deleteOrders: false,
+    manageStore: false, manageRedemptions: false, manageTokens: false,
+    viewCustomers: true, manageCustomers: false, manageSite: false,
+    exportData: true, viewAudit: false, manageAdmins: false
+  },
+  store: {
+    viewOrders: false, manageOrders: false, deleteOrders: false,
+    manageStore: true, manageRedemptions: true, manageTokens: false,
+    viewCustomers: true, manageCustomers: false, manageSite: false,
+    exportData: true, viewAudit: false, manageAdmins: false
+  },
+  support: {
+    viewOrders: true, manageOrders: false, deleteOrders: false,
+    manageStore: false, manageRedemptions: false, manageTokens: false,
+    viewCustomers: true, manageCustomers: false, manageSite: false,
+    exportData: false, viewAudit: false, manageAdmins: false
+  }
+};
+
 export function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -121,13 +154,27 @@ export async function ensureAdminSchema(db) {
       `).run();
 
       await db.prepare(`
+        CREATE TABLE IF NOT EXISTS admin_role_profiles (
+          email TEXT PRIMARY KEY COLLATE NOCASE,
+          role_name TEXT NOT NULL DEFAULT 'manager'
+            CHECK (role_name IN ('owner', 'manager', 'orders', 'store', 'support')),
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_by_email TEXT
+        )
+      `).run();
+
+      await db.prepare(`
         INSERT INTO site_admins (
           email, role, active, created_by_email, created_at, updated_at
         ) VALUES (?, 'owner', 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         ON CONFLICT(email) DO UPDATE SET
-          role = 'owner',
-          active = 1,
-          updated_at = CURRENT_TIMESTAMP
+          role = 'owner', active = 1, updated_at = CURRENT_TIMESTAMP
+      `).bind(OWNER_EMAIL, OWNER_EMAIL).run();
+
+      await db.prepare(`
+        INSERT INTO admin_role_profiles (email, role_name, updated_at, updated_by_email)
+        VALUES (?, 'owner', CURRENT_TIMESTAMP, ?)
+        ON CONFLICT(email) DO UPDATE SET role_name = 'owner', updated_at = CURRENT_TIMESTAMP
       `).bind(OWNER_EMAIL, OWNER_EMAIL).run();
     })().catch(error => {
       adminSchemaPromise = null;
@@ -140,25 +187,28 @@ export async function ensureAdminSchema(db) {
 export async function getAdminAccess(db, user) {
   const email = normalizeEmail(user?.email);
   if (!email || !user?.emailVerified) {
-    return { isAdmin: false, isOwner: false, role: null };
+    return { isAdmin: false, isOwner: false, role: null, permissions: {} };
   }
   if (email === OWNER_EMAIL) {
-    return { isAdmin: true, isOwner: true, role: 'owner' };
+    return { isAdmin: true, isOwner: true, role: "owner", permissions: ROLE_PERMISSIONS.owner };
   }
 
   await ensureAdminSchema(db);
   const row = await db.prepare(`
-    SELECT role, active
-    FROM site_admins
-    WHERE email = ? COLLATE NOCASE
+    SELECT a.role, a.active, COALESCE(p.role_name, 'manager') AS role_name
+    FROM site_admins a
+    LEFT JOIN admin_role_profiles p ON p.email = a.email COLLATE NOCASE
+    WHERE a.email = ? COLLATE NOCASE
     LIMIT 1
   `).bind(email).first();
 
-  const allowed = Number(row?.active || 0) === 1 && row?.role === 'admin';
+  const allowed = Number(row?.active || 0) === 1 && row?.role === "admin";
+  const role = allowed && ROLE_PERMISSIONS[row?.role_name] ? row.role_name : (allowed ? "manager" : null);
   return {
     isAdmin: allowed,
     isOwner: false,
-    role: allowed ? 'admin' : null
+    role,
+    permissions: role ? ROLE_PERMISSIONS[role] : {}
   };
 }
 
@@ -169,10 +219,16 @@ export async function isAdmin(user, db) {
 export async function requireAdminUser(request, db) {
   const user = await requireFirebaseUser(request);
   const access = await getAdminAccess(db, user);
-  if (!access.isAdmin) {
-    throw Object.assign(new Error("Admin access denied."), { status: 403 });
+  if (!access.isAdmin) throw Object.assign(new Error("Admin access denied."), { status: 403 });
+  return { ...user, adminRole: access.role, isOwner: access.isOwner, permissions: access.permissions };
+}
+
+export async function requirePermission(request, db, permission) {
+  const user = await requireAdminUser(request, db);
+  if (!user.permissions?.[permission]) {
+    throw Object.assign(new Error("Your admin role does not allow this action."), { status: 403 });
   }
-  return { ...user, adminRole: access.role, isOwner: access.isOwner };
+  return user;
 }
 
 export async function requireOwnerUser(request, db) {
@@ -181,7 +237,7 @@ export async function requireOwnerUser(request, db) {
     throw Object.assign(new Error("Owner access required."), { status: 403 });
   }
   await ensureAdminSchema(db);
-  return { ...user, adminRole: 'owner', isOwner: true };
+  return { ...user, adminRole: "owner", isOwner: true, permissions: ROLE_PERMISSIONS.owner };
 }
 
 export async function upsertUser(db, user, profile = {}) {
@@ -241,7 +297,10 @@ export function parseCustomer(body = {}) {
     discordUsername: cleanText(customer.discordUsername, { name: "Discord username", min: 1, max: 80, required: true }),
     gangName: cleanText(customer.gangName, { name: "Gang name", min: 1, max: 100, required: true }),
     customRequest: cleanText(customer.customRequest, { name: "Custom request", min: 3, max: 3000, required: true }),
-    referenceLink: cleanReferenceLink(customer.referenceLink)
+    referenceLink: cleanReferenceLink(customer.referenceLink),
+    gangShirtLink: cleanReferenceLink(customer.gangShirtLink),
+    gangPantsLink: cleanReferenceLink(customer.gangPantsLink),
+    gangGroupLink: cleanReferenceLink(customer.gangGroupLink)
   };
 }
 

@@ -63,6 +63,7 @@ const el = {
   adminAccessTab: document.getElementById("adminAccessTab"),
   adminAccessForm: document.getElementById("adminAccessForm"),
   newAdminEmail: document.getElementById("newAdminEmail"),
+  newAdminRole: document.getElementById("newAdminRole"),
   addAdminButton: document.getElementById("addAdminButton"),
   adminAccessMessage: document.getElementById("adminAccessMessage"),
   adminAccessList: document.getElementById("adminAccessList"),
@@ -521,8 +522,35 @@ function switchWalletTab(name) {
   document.querySelectorAll(".wallet-tab-panel").forEach(panel => panel.classList.toggle("active", panel.id === `wallet${name[0].toUpperCase()}${name.slice(1)}Panel`));
 }
 
+const adminTabPermissions = {
+  orders: "viewOrders",
+  store: "manageStore",
+  redemptions: "manageRedemptions",
+  tokens: "manageTokens",
+  site: "manageSite",
+  security: "exportData",
+  customers: "viewCustomers",
+  admins: "manageAdmins"
+};
+
+function adminPermissions() {
+  return authApi?.getPermissions?.() || {};
+}
+
+function canOpenAdminTab(name) {
+  if (name === "security") {
+    const permissions = adminPermissions();
+    return Boolean(permissions.exportData || permissions.viewAudit);
+  }
+  return Boolean(adminPermissions()[adminTabPermissions[name]]);
+}
+
+function firstAllowedAdminTab() {
+  return ["orders", "store", "redemptions", "tokens", "site", "security", "customers", "admins"].find(canOpenAdminTab) || "orders";
+}
+
 function switchAdminTab(name) {
-  if (name === "admins" && !authApi?.isOwner?.()) name = "orders";
+  if (!canOpenAdminTab(name)) name = firstAllowedAdminTab();
   activeAdminTab = name;
   document.querySelectorAll("[data-admin-tab]").forEach(button => button.classList.toggle("active", button.dataset.adminTab === name));
   document.querySelectorAll("[data-admin-panel]").forEach(panel => panel.classList.toggle("active", panel.dataset.adminPanel === name));
@@ -1020,12 +1048,13 @@ function renderAdminCustomers() {
     el.customerTableBody.innerHTML = `<tr><td colspan="6"><div class="dashboard-empty"><strong>No matching customers.</strong></div></td></tr>`;
     return;
   }
+  const canAdjust = Boolean(adminPermissions().manageCustomers);
   el.customerTableBody.innerHTML = filtered.map(customer => `<tr>
     <td><strong>${escapeHtml(customer.display_name || "Zone6ix customer")}</strong><small>${escapeHtml(customer.email)}</small></td>
     <td><strong>${escapeHtml(customer.roblox_username || "—")}</strong><small>${escapeHtml(customer.gang_name || customer.discord_username || "—")}</small></td>
     <td><strong>${escapeHtml(tokenLabel(customer.balance_milli))}</strong><small>${escapeHtml(tokenLabel(customer.lifetime_earned_milli))} earned</small></td>
     <td>${Number(customer.order_count || 0)}</td><td>${Number(customer.redemption_count || 0)}</td>
-    <td><button type="button" data-adjust-customer="${escapeHtml(customer.firebase_uid)}">Adjust tokens</button></td>
+    <td>${canAdjust ? `<button type="button" data-adjust-customer="${escapeHtml(customer.firebase_uid)}">Adjust tokens</button>` : `<span class="admin-readonly-note">View only</span>`}</td>
   </tr>`).join("");
   el.customerTableBody.querySelectorAll("[data-adjust-customer]").forEach(button => button.addEventListener("click", () => adjustCustomerTokens(button.dataset.adjustCustomer)));
 }
@@ -1047,14 +1076,18 @@ async function loadAdminCustomers(force = false) {
 
 function updateAdminAccessUi() {
   const owner = Boolean(authApi?.isOwner?.());
-  if (el.adminAccessTab) el.adminAccessTab.hidden = !owner;
+  const permissions = adminPermissions();
+  document.querySelectorAll("[data-admin-tab]").forEach(button => {
+    button.hidden = !canOpenAdminTab(button.dataset.adminTab);
+  });
+  if (el.adminAccessTab) el.adminAccessTab.hidden = !permissions.manageAdmins;
   if (el.adminDashboardKicker) {
-    el.adminDashboardKicker.textContent = owner ? "OWNER CONTROL CENTRE" : "ADMIN CONTROL CENTRE";
+    const role = authApi?.getAdminRole?.() || "admin";
+    el.adminDashboardKicker.textContent = owner ? "OWNER CONTROL CENTRE" : `${String(role).toUpperCase()} CONTROL CENTRE`;
   }
-  if (!owner) {
-    siteAdmins = [];
-    if (activeAdminTab === "admins") switchAdminTab("orders");
-  }
+  if (!owner) siteAdmins = [];
+  if (!canOpenAdminTab(activeAdminTab)) activeAdminTab = firstAllowedAdminTab();
+  switchAdminTab(activeAdminTab);
 }
 
 function adminInitials(email) {
@@ -1081,7 +1114,9 @@ function renderAdminAccess() {
         <strong>${escapeHtml(admin.email)}</strong>
         <small>${owner ? "Permanent owner account" : `Added ${escapeHtml(formatDate(admin.created_at, false))} by ${escapeHtml(admin.created_by_email || "owner")}`}</small>
       </div>
-      <span class="admin-role-badge${owner ? " owner" : ""}">${owner ? "Owner" : "Admin"}</span>
+      ${owner ? `<span class="admin-role-badge owner">Owner</span>` : `<label class="admin-role-control"><span>Role</span><select data-admin-role-email="${escapeHtml(admin.email)}">
+        ${[["manager","Manager"],["orders","Orders admin"],["store","Store admin"],["support","Support"]].map(([value,label]) => `<option value="${value}" ${admin.role_name === value ? "selected" : ""}>${label}</option>`).join("")}
+      </select></label>`}
       ${owner ? "" : `<button class="remove-admin-button" type="button" data-remove-admin="${escapeHtml(admin.email)}">Remove access</button>`}
     </article>`;
   }).join("");
@@ -1112,16 +1147,17 @@ async function addAdminAccess(event) {
     message.textContent = "Adding secure admin access…";
   }
   try {
+    const roleName = el.newAdminRole?.value || "manager";
     const data = await authApi.apiFetch("/api/admin-access", {
       method: "POST",
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, roleName })
     });
     siteAdmins = Array.isArray(data.admins) ? data.admins : [];
     renderAdminAccess();
     if (el.newAdminEmail) el.newAdminEmail.value = "";
     if (message) message.textContent = data.alreadyOwner
       ? "That email is already the permanent owner account."
-      : `${email} now has admin access. They should refresh the site and sign in with that exact Google account.`;
+      : `${email} now has ${el.newAdminRole?.selectedOptions?.[0]?.textContent || "admin"} access. They should refresh the site and sign in with that exact Google account.`;
   } catch (error) {
     if (message) {
       message.classList.add("error");
@@ -1129,6 +1165,31 @@ async function addAdminAccess(event) {
     }
   } finally {
     if (button) button.disabled = false;
+  }
+}
+
+async function changeAdminRole(email, roleName, select) {
+  if (!authApi?.isOwner?.()) return;
+  const previous = siteAdmins.find(admin => admin.email === email)?.role_name || "manager";
+  select.disabled = true;
+  try {
+    const data = await authApi.apiFetch("/api/admin-access", {
+      method: "PATCH",
+      body: JSON.stringify({ email, roleName })
+    });
+    siteAdmins = Array.isArray(data.admins) ? data.admins : [];
+    renderAdminAccess();
+    if (el.adminAccessMessage) {
+      el.adminAccessMessage.classList.remove("error");
+      el.adminAccessMessage.textContent = `${email} role changed to ${roleName}.`;
+    }
+  } catch (error) {
+    select.value = previous;
+    select.disabled = false;
+    if (el.adminAccessMessage) {
+      el.adminAccessMessage.classList.add("error");
+      el.adminAccessMessage.textContent = error.message;
+    }
   }
 }
 
@@ -1153,6 +1214,7 @@ async function removeAdminAccess(email) {
 }
 
 async function adjustCustomerTokens(uid) {
+  if (!adminPermissions().manageCustomers) return;
   const customer = adminCustomers.find(item => item.firebase_uid === uid);
   if (!customer) return;
   const amountText = prompt(`Add or remove Zone Tokens for ${customer.email}.\nUse a negative number to remove tokens.`, "10");
@@ -1222,6 +1284,10 @@ function bindEvents() {
   el.adminAccessList?.addEventListener("click", event => {
     const button = event.target.closest("[data-remove-admin]");
     if (button) removeAdminAccess(button.dataset.removeAdmin);
+  });
+  el.adminAccessList?.addEventListener("change", event => {
+    const select = event.target.closest("[data-admin-role-email]");
+    if (select) changeAdminRole(select.dataset.adminRoleEmail, select.value, select);
   });
 
   document.addEventListener("keydown", event => {

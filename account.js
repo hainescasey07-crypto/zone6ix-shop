@@ -33,6 +33,7 @@ let accountProfile = null;
 let adminAllowed = false;
 let ownerAllowed = false;
 let adminRole = null;
+let adminPermissions = {};
 let adminOrders = [];
 let selectedAdminOrderId = null;
 let readyResolved = false;
@@ -284,12 +285,14 @@ async function syncAccount() {
     adminAllowed = Boolean(data.isAdmin);
     ownerAllowed = Boolean(data.isOwner);
     adminRole = data.adminRole || null;
+    adminPermissions = data.permissions || {};
     updateAccountUi();
   } catch (error) {
     console.error("Account sync failed:", error);
     ownerAllowed = currentUser.email?.toLowerCase() === "hainescasey07@gmail.com";
     adminAllowed = ownerAllowed;
     adminRole = ownerAllowed ? "owner" : null;
+    adminPermissions = ownerAllowed ? { viewOrders: true, manageOrders: true, deleteOrders: true, manageStore: true, manageRedemptions: true, manageTokens: true, viewCustomers: true, manageCustomers: true, manageSite: true, exportData: true, viewAudit: true, manageAdmins: true } : {};
     updateAccountUi();
   }
 }
@@ -369,6 +372,11 @@ function renderCustomerOrders(orders) {
           <div class="order-history-products"><h4>${tr("Products")}</h4><ul>${items || `<li><span>${tr("No items found")}</span></li>`}</ul></div>
           <div class="order-history-update"><h4>${tr("Latest update")}</h4><p>${escapeHtml(updateText)}</p></div>
         </div>
+        ${(order.gang_shirt_link || order.gang_pants_link || order.gang_group_link) ? `<div class="order-history-links">
+          ${order.gang_shirt_link ? `<a href="${escapeHtml(order.gang_shirt_link)}" target="_blank" rel="noopener">${tr("Gang shirt")}</a>` : ""}
+          ${order.gang_pants_link ? `<a href="${escapeHtml(order.gang_pants_link)}" target="_blank" rel="noopener">${tr("Gang pants")}</a>` : ""}
+          ${order.gang_group_link ? `<a href="${escapeHtml(order.gang_group_link)}" target="_blank" rel="noopener">${tr("Gang group")}</a>` : ""}
+        </div>` : ""}
         <div class="order-meta-line">
           <span>${escapeHtml(order.gang_name)}</span>
           <span>${escapeHtml(order.roblox_username)}</span>
@@ -484,6 +492,8 @@ function selectAdminOrder(orderId) {
   const order = adminOrders.find(item => item.id === orderId);
   renderAdminOrderList();
   if (!order) return;
+  const canManage = Boolean(adminPermissions.manageOrders);
+  const canDelete = Boolean(adminPermissions.deleteOrders);
   elements.adminEditor.innerHTML = `
     <div class="admin-editor-head">
       <div><small>${escapeHtml(order.order_code)}</small><h3>${escapeHtml(order.gang_name)}</h3></div>
@@ -503,39 +513,44 @@ function selectAdminOrder(orderId) {
 
     <section class="admin-editor-section"><h4>Products</h4><ul>${adminProducts(order)}</ul></section>
     <section class="admin-editor-section"><h4>Customer request</h4><p>${escapeHtml(order.custom_request)}</p></section>
-    ${order.reference_link ? `<section class="admin-editor-section"><h4>Reference link</h4><p>${escapeHtml(order.reference_link)}</p></section>` : ""}
+    ${order.reference_link ? `<section class="admin-editor-section"><h4>Reference link</h4><p><a href="${escapeHtml(order.reference_link)}" target="_blank" rel="noopener">Open reference</a></p></section>` : ""}
+    ${(order.gang_shirt_link || order.gang_pants_link || order.gang_group_link) ? `<section class="admin-editor-section"><h4>Gang clothing and group</h4><div class="admin-resource-links">
+      ${order.gang_shirt_link ? `<a href="${escapeHtml(order.gang_shirt_link)}" target="_blank" rel="noopener">Open gang shirt</a>` : ""}
+      ${order.gang_pants_link ? `<a href="${escapeHtml(order.gang_pants_link)}" target="_blank" rel="noopener">Open gang pants</a>` : ""}
+      ${order.gang_group_link ? `<a href="${escapeHtml(order.gang_group_link)}" target="_blank" rel="noopener">Open gang group</a>` : ""}
+    </div></section>` : ""}
 
     <label class="admin-editor-field"><span>Order status</span>
-      <select id="adminOrderStatus">
+      <select id="adminOrderStatus" ${canManage ? "" : "disabled"}>
         ${["awaiting_payment", "paid", "reviewing", "in_progress", "ready", "completed", "cancelled"].map(value => `<option value="${value}" ${order.order_status === value ? "selected" : ""}>${statusName(value, false)}</option>`).join("")}
       </select>
     </label>
 
     <label class="admin-editor-field"><span>Payment status</span>
-      <select id="adminPaymentStatus">
+      <select id="adminPaymentStatus" ${canManage ? "" : "disabled"}>
         ${["unpaid", "pending", "paid", "failed", "refunded", "robux_pending", "robux_verified"].map(value => `<option value="${value}" ${order.payment_status === value ? "selected" : ""}>${statusName(value, false)}</option>`).join("")}
       </select>
     </label>
 
     <label class="admin-editor-field"><span>Customer-visible update</span>
-      <textarea id="adminCustomerUpdate" placeholder="Example: The exterior is finished and the armoury is being built next.">${escapeHtml(order.customer_update || "")}</textarea>
+      <textarea id="adminCustomerUpdate" ${canManage ? "" : "disabled"} placeholder="Example: The exterior is finished and the armoury is being built next.">${escapeHtml(order.customer_update || "")}</textarea>
     </label>
 
     <label class="admin-editor-field"><span>Private admin note</span>
-      <textarea id="adminPrivateNote" placeholder="Only you can see this note.">${escapeHtml(order.admin_private_note || "")}</textarea>
+      <textarea id="adminPrivateNote" ${canManage ? "" : "disabled"} placeholder="Only you can see this note.">${escapeHtml(order.admin_private_note || "")}</textarea>
     </label>
 
     <div class="admin-save-row">
-      <button class="dashboard-primary" id="saveAdminOrder" type="button">Save order update</button>
-      <button class="dashboard-delete" id="deleteAdminOrder" type="button">Delete order permanently</button>
+      ${canManage ? `<button class="dashboard-primary" id="saveAdminOrder" type="button">Save order update</button>` : `<span class="admin-readonly-note">View-only access</span>`}
+      ${canDelete ? `<button class="dashboard-delete" id="deleteAdminOrder" type="button">Delete order permanently</button>` : ""}
       <span class="admin-save-message" id="adminSaveMessage"></span>
     </div>`;
-  document.getElementById("saveAdminOrder").addEventListener("click", saveAdminOrder);
-  document.getElementById("deleteAdminOrder").addEventListener("click", deleteAdminOrder);
+  document.getElementById("saveAdminOrder")?.addEventListener("click", saveAdminOrder);
+  document.getElementById("deleteAdminOrder")?.addEventListener("click", deleteAdminOrder);
 }
 
 async function saveAdminOrder() {
-  if (!selectedAdminOrderId) return;
+  if (!selectedAdminOrderId || !adminPermissions.manageOrders) return;
   const message = document.getElementById("adminSaveMessage");
   const button = document.getElementById("saveAdminOrder");
   button.disabled = true;
@@ -565,7 +580,7 @@ async function saveAdminOrder() {
 }
 
 async function deleteAdminOrder() {
-  if (!selectedAdminOrderId) return;
+  if (!selectedAdminOrderId || !adminPermissions.deleteOrders) return;
   const order = adminOrders.find(item => item.id === selectedAdminOrderId);
   if (!order) return;
   const confirmed = confirm(`Permanently delete order ${order.order_code}? This removes it from Admin and the customer's My Orders history.`);
@@ -596,6 +611,10 @@ async function deleteAdminOrder() {
 }
 
 async function loadAdminOrders() {
+  if (!adminPermissions.viewOrders) {
+    elements.adminOrderList.innerHTML = `<div class="dashboard-empty"><strong>Orders access unavailable.</strong><span>Choose another dashboard section permitted by your role.</span></div>`;
+    return;
+  }
   elements.adminOrderList.innerHTML = `<div class="dashboard-loading"><i></i><span>Loading all orders…</span></div>`;
   try {
     const data = await apiFetch("/api/admin-orders");
@@ -629,7 +648,8 @@ async function openAdminDashboard() {
     return;
   }
 
-  await loadAdminOrders();
+  if (adminPermissions.viewOrders) await loadAdminOrders();
+  document.dispatchEvent(new CustomEvent("zone6ix-admin-opened", { detail: { permissions: { ...adminPermissions }, role: adminRole } }));
 }
 
 function bindEvents() {
@@ -658,7 +678,7 @@ function bindEvents() {
   elements.closeAdminDashboard?.addEventListener("click", closeDashboards);
   elements.dashboardBackdrop?.addEventListener("click", closeDashboards);
   elements.refreshOrdersButton?.addEventListener("click", loadOrders);
-  elements.refreshAdminButton?.addEventListener("click", loadAdminOrders);
+  elements.refreshAdminButton?.addEventListener("click", () => { if (adminPermissions.viewOrders) loadAdminOrders(); });
   elements.profileForm?.addEventListener("submit", saveProfile);
   elements.adminSearch?.addEventListener("input", renderAdminOrderList);
   elements.adminStatusFilter?.addEventListener("change", renderAdminOrderList);
@@ -691,6 +711,8 @@ window.zone6ixAuth = {
   isAdmin: () => adminAllowed,
   isOwner: () => ownerAllowed,
   getAdminRole: () => adminRole,
+  getPermissions: () => ({ ...adminPermissions }),
+  hasPermission: permission => Boolean(adminPermissions?.[permission]),
   openAdmin: openAdminDashboard,
   openDashboard,
   closeDashboards,
@@ -709,6 +731,7 @@ onAuthStateChanged(auth, async user => {
   adminAllowed = false;
   ownerAllowed = false;
   adminRole = null;
+  adminPermissions = {};
   updateAccountUi();
 
   // Resolve auth restoration immediately. API calls made by syncAccount can

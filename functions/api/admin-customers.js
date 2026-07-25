@@ -1,18 +1,15 @@
 import {
   cleanText,
   errorResponse,
-  requireAdminUser,
+  requirePermission,
   json,
 } from "../_lib/common.js";
 import { ensureTokenWallet } from "../_lib/tokens.js";
-
-async function requireAdmin(request, db) {
-  return requireAdminUser(request, db);
-}
+import { logAdminAction } from "../_lib/site.js";
 
 export async function onRequestGet({ request, env }) {
   try {
-    await requireAdmin(request, env.DB);
+    await requirePermission(request, env.DB, "viewCustomers");
     const result = await env.DB.prepare(`
       SELECT u.firebase_uid, u.email, u.display_name, u.photo_url,
              u.roblox_username, u.discord_username, u.gang_name,
@@ -35,7 +32,7 @@ export async function onRequestGet({ request, env }) {
 
 export async function onRequestPatch({ request, env }) {
   try {
-    const admin = await requireAdmin(request, env.DB);
+    const admin = await requirePermission(request, env.DB, "manageCustomers");
     const body = await request.json().catch(() => ({}));
     const uid = cleanText(body.uid, { name: "Customer ID", min: 1, max: 150, required: true });
     const deltaMilli = Math.trunc(Number(body.deltaMilli));
@@ -70,6 +67,7 @@ export async function onRequestPatch({ request, env }) {
       `).bind(uid, deltaMilli, newBalance, admin.email, note, key, admin.email)
     ]);
 
+    await logAdminAction(env.DB, admin, "customer_tokens_adjusted", "customer", uid, { deltaMilli, note });
     return json({ wallet: await ensureTokenWallet(env.DB, uid) });
   } catch (error) {
     return errorResponse(error);
