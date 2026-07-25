@@ -657,7 +657,7 @@
   <section class="dashboard-modal admin-dashboard" id="adminDashboard" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="adminDashboardTitle">
     <header class="dashboard-header admin-header">
       <div>
-        <small>OWNER CONTROL CENTRE</small>
+        <small id="adminDashboardKicker">OWNER CONTROL CENTRE</small>
         <h2 id="adminDashboardTitle">Zone6ix orders</h2>
       </div>
       <div class="dashboard-header-actions">
@@ -675,6 +675,7 @@
       <button type="button" data-admin-tab="redemptions"><svg viewBox="0 0 24 24"><path d="M4 6h16v14H4zM8 3v6M16 3v6M4 10h16"/></svg><span>Redemptions</span></button>
       <button type="button" data-admin-tab="tokens"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/></svg><span>Token settings</span></button>
       <button type="button" data-admin-tab="customers"><svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm10-1a3 3 0 1 0 0-6M2 21a7 7 0 0 1 14 0m1-7a5 5 0 0 1 5 5"/></svg><span>Customers</span></button>
+      <button id="adminAccessTab" hidden type="button" data-admin-tab="admins"><svg viewBox="0 0 24 24"><path d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M4 21a8 8 0 0 1 16 0M19 3v6M16 6h6"/></svg><span>Admins</span></button>
     </nav>
 
     <div class="admin-tab-panel active" id="adminPanelOrders" data-admin-panel="orders">
@@ -737,11 +738,41 @@
     <div class="admin-tab-panel" id="adminPanelCustomers" data-admin-panel="customers">
       <div class="customers-admin-panel"><div class="admin-panel-head"><div><small>ACCOUNT MANAGEMENT</small><h3>Customers and wallets</h3></div><button class="dashboard-refresh" id="refreshCustomers" type="button">Refresh</button></div><div class="store-admin-filters"><input id="customerSearch" type="search" placeholder="Search name, email, Roblox, Discord or gang"></div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>Roblox / Gang</th><th>Balance</th><th>Orders</th><th>Redemptions</th><th>Adjust</th></tr></thead><tbody id="customerTableBody"><tr><td colspan="6"><div class="dashboard-loading"><i></i><span>Loading customers…</span></div></td></tr></tbody></table></div></div>
     </div>
+
+    <div class="admin-tab-panel" id="adminPanelAdmins" data-admin-panel="admins">
+      <div class="admin-access-layout">
+        <section class="admin-access-card">
+          <div class="admin-panel-head">
+            <div><small>OWNER-ONLY SECURITY</small><h3>Add an administrator</h3></div>
+            <span class="owner-only-badge">Owner only</span>
+          </div>
+          <form id="adminAccessForm" class="admin-access-form">
+            <label><span>Google account email</span><input id="newAdminEmail" type="email" maxlength="254" autocomplete="off" placeholder="admin@example.com" required></label>
+            <button class="dashboard-primary" id="addAdminButton" type="submit">Give admin access</button>
+          </form>
+          <div class="admin-access-warning">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5M12 17h.01"/></svg>
+            <p><strong>Only add people you fully trust.</strong> Added admins can manage orders, rewards, redemptions, token settings and customer balances. They cannot add or remove other admins.</p>
+          </div>
+          <p class="admin-access-message" id="adminAccessMessage" aria-live="polite"></p>
+        </section>
+
+        <section class="admin-access-list-card">
+          <div class="admin-panel-head">
+            <div><small>LIVE ACCESS LIST</small><h3>Website administrators</h3></div>
+            <button class="dashboard-refresh" id="refreshAdmins" type="button">Refresh</button>
+          </div>
+          <div class="admin-access-list" id="adminAccessList">
+            <div class="dashboard-loading"><i></i><span>Loading administrators…</span></div>
+          </div>
+        </section>
+      </div>
+    </div>
   </section>
 
-  <script src="language.js?v=rewards-1"></script>
-  <script type="module" src="account.js?v=rewards-1"></script>
-  <script type="module" src="tokens-store.js?v=rewards-1"></script>
-  <script src="script.js?v=rewards-1"></script>
+  <script src="language.js?v=admin-access-1"></script>
+  <script type="module" src="account.js?v=admin-access-1"></script>
+  <script type="module" src="tokens-store.js?v=admin-access-1"></script>
+  <script src="script.js?v=admin-access-1"></script>
 </body>
 </html>

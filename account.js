@@ -31,6 +31,8 @@ provider.setCustomParameters({ prompt: "select_account" });
 let currentUser = null;
 let accountProfile = null;
 let adminAllowed = false;
+let ownerAllowed = false;
+let adminRole = null;
 let adminOrders = [];
 let selectedAdminOrderId = null;
 let readyResolved = false;
@@ -244,7 +246,11 @@ function updateAccountUi() {
   setAvatar(elements.accountAvatar, currentUser);
   setAvatar(elements.accountMenuAvatar, currentUser);
   elements.accountLabel.textContent = name.split(" ")[0];
-  elements.accountSubLabel.textContent = adminAllowed ? tr("Owner account") : tr("My Zone6ix");
+  elements.accountSubLabel.textContent = ownerAllowed
+    ? tr("Owner account")
+    : adminAllowed
+      ? tr("Admin account")
+      : tr("My Zone6ix");
   elements.accountMenuName.textContent = name;
   elements.accountMenuEmail.textContent = currentUser.email || "";
   elements.myOrdersButton.hidden = false;
@@ -268,10 +274,14 @@ async function syncAccount() {
     });
     accountProfile = data.user || null;
     adminAllowed = Boolean(data.isAdmin);
+    ownerAllowed = Boolean(data.isOwner);
+    adminRole = data.adminRole || null;
     updateAccountUi();
   } catch (error) {
     console.error("Account sync failed:", error);
-    adminAllowed = currentUser.email?.toLowerCase() === "hainescasey07@gmail.com";
+    ownerAllowed = currentUser.email?.toLowerCase() === "hainescasey07@gmail.com";
+    adminAllowed = ownerAllowed;
+    adminRole = ownerAllowed ? "owner" : null;
     updateAccountUi();
   }
 }
@@ -638,6 +648,8 @@ window.zone6ixAuth = {
   openMyOrders: openOrdersDashboard,
   refreshOrders: loadOrders,
   isAdmin: () => adminAllowed,
+  isOwner: () => ownerAllowed,
+  getAdminRole: () => adminRole,
   openAdmin: openAdminDashboard,
   openDashboard,
   closeDashboards,
@@ -654,6 +666,8 @@ onAuthStateChanged(auth, async user => {
   currentUser = user;
   accountProfile = null;
   adminAllowed = false;
+  ownerAllowed = false;
+  adminRole = null;
   updateAccountUi();
   if (user) await syncAccount();
   if (!readyResolved) {

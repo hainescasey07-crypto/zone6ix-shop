@@ -14,6 +14,7 @@ let selectedStoreImage = null;
 let adminRedemptions = [];
 let selectedRedemptionId = null;
 let adminCustomers = [];
+let siteAdmins = [];
 let activeAdminTab = "orders";
 
 const el = {
@@ -56,8 +57,16 @@ const el = {
   confirmRedeemButton: document.getElementById("confirmRedeemButton"),
   redeemMessage: document.getElementById("redeemMessage"),
   adminSectionTabs: document.getElementById("adminSectionTabs"),
+  adminDashboardKicker: document.getElementById("adminDashboardKicker"),
   refreshAdminButton: document.getElementById("refreshAdminButton"),
   adminButton: document.getElementById("adminButton"),
+  adminAccessTab: document.getElementById("adminAccessTab"),
+  adminAccessForm: document.getElementById("adminAccessForm"),
+  newAdminEmail: document.getElementById("newAdminEmail"),
+  addAdminButton: document.getElementById("addAdminButton"),
+  adminAccessMessage: document.getElementById("adminAccessMessage"),
+  adminAccessList: document.getElementById("adminAccessList"),
+  refreshAdmins: document.getElementById("refreshAdmins"),
   storeAdminList: document.getElementById("storeAdminList"),
   storeItemEditor: document.getElementById("storeItemEditor"),
   createStoreItemButton: document.getElementById("createStoreItemButton"),
@@ -513,6 +522,7 @@ function switchWalletTab(name) {
 }
 
 function switchAdminTab(name) {
+  if (name === "admins" && !authApi?.isOwner?.()) name = "orders";
   activeAdminTab = name;
   document.querySelectorAll("[data-admin-tab]").forEach(button => button.classList.toggle("active", button.dataset.adminTab === name));
   document.querySelectorAll("[data-admin-panel]").forEach(panel => panel.classList.toggle("active", panel.dataset.adminPanel === name));
@@ -520,6 +530,7 @@ function switchAdminTab(name) {
   if (name === "redemptions") loadAdminRedemptions();
   if (name === "tokens") loadTokenSettings();
   if (name === "customers") loadAdminCustomers();
+  if (name === "admins") loadAdminAccess();
 }
 
 function storeItemForm(item = null) {
@@ -567,7 +578,13 @@ function storeItemForm(item = null) {
     </div>
     <label class="admin-toggle"><input id="storeIsLimited" type="checkbox" ${item?.isLimited !== false ? "checked" : ""}><span></span><div><strong>Limited item</strong><small>Show the limited badge and stock information.</small></div></label>
     <label><span>Private delivery notes</span><textarea id="storeDeliveryNotes" maxlength="1200">${value("deliveryNotes")}</textarea></label>
-    <div class="admin-save-row"><button class="dashboard-primary" type="submit">${isNew ? "Create item" : "Save changes"}</button>${!isNew ? `<button class="dashboard-danger" id="archiveStoreItem" type="button">Archive</button>` : ""}<span id="storeSaveMessage"></span></div>
+    <div class="admin-save-row">
+      <button class="dashboard-primary" type="submit">${isNew ? "Create item" : "Save changes"}</button>
+      ${!isNew && item.status !== "archived" ? `<button class="dashboard-danger" id="archiveStoreItem" type="button">Archive</button>` : ""}
+      ${!isNew && item.status === "archived" ? `<button class="dashboard-secondary" id="restoreStoreItem" type="button">Unarchive</button>` : ""}
+      ${!isNew ? `<button class="dashboard-delete" id="deleteStoreItem" type="button">Delete permanently</button>` : ""}
+      <span id="storeSaveMessage"></span>
+    </div>
   </form>`;
 }
 
@@ -621,6 +638,8 @@ function bindStoreForm() {
     }
   });
   document.getElementById("archiveStoreItem")?.addEventListener("click", archiveStoreItem);
+  document.getElementById("restoreStoreItem")?.addEventListener("click", restoreStoreItem);
+  document.getElementById("deleteStoreItem")?.addEventListener("click", deleteStoreItem);
   document.getElementById("removeStoreImage")?.addEventListener("click", removeStoreImage);
 }
 
@@ -755,14 +774,61 @@ async function archiveStoreItem() {
   if (!selectedStoreItemId || !confirm("Archive this store item? It will disappear from the live store.")) return;
   const message = document.getElementById("storeSaveMessage");
   try {
-    await authApi.apiFetch(`/api/admin-store?itemId=${encodeURIComponent(selectedStoreItemId)}`, { method: "DELETE" });
+    message.textContent = "Archiving item…";
+    await authApi.apiFetch(`/api/admin-store?itemId=${encodeURIComponent(selectedStoreItemId)}&mode=archive`, { method: "DELETE" });
+    const archivedId = selectedStoreItemId;
+    storeAdminItems = [];
+    await Promise.all([loadAdminStoreItems(true), loadStoreItems()]);
+    selectStoreAdminItem(archivedId);
+    document.getElementById("storeSaveMessage").textContent = "Item archived.";
+  } catch (error) {
+    message.textContent = error.message;
+  }
+}
+
+async function restoreStoreItem() {
+  if (!selectedStoreItemId || !confirm("Unarchive this item? It will return as a draft so you can review it before making it live.")) return;
+  const message = document.getElementById("storeSaveMessage");
+  try {
+    message.textContent = "Restoring item…";
+    const restoredId = selectedStoreItemId;
+    await authApi.apiFetch("/api/admin-store", {
+      method: "PATCH",
+      body: JSON.stringify({ itemId: restoredId, action: "restore" })
+    });
+    storeAdminItems = [];
+    await Promise.all([loadAdminStoreItems(true), loadStoreItems()]);
+    selectStoreAdminItem(restoredId);
+    document.getElementById("storeSaveMessage").textContent = "Item unarchived as a draft.";
+  } catch (error) {
+    message.textContent = error.message;
+  }
+}
+
+async function deleteStoreItem() {
+  if (!selectedStoreItemId) return;
+  const item = storeAdminItems.find(entry => entry.id === selectedStoreItemId);
+  const itemName = item?.name || "this item";
+  const firstCheck = confirm(`Permanently delete ${itemName}? This cannot be undone.`);
+  if (!firstCheck) return;
+  const typed = prompt(`Type DELETE to permanently remove ${itemName}.`);
+  if (typed !== "DELETE") return;
+
+  const message = document.getElementById("storeSaveMessage");
+  const button = document.getElementById("deleteStoreItem");
+  if (button) button.disabled = true;
+  try {
+    message.textContent = "Deleting item…";
+    await authApi.apiFetch(`/api/admin-store?itemId=${encodeURIComponent(selectedStoreItemId)}&mode=permanent`, { method: "DELETE" });
     selectedStoreItemId = null;
+    selectedStoreImage = null;
     storeAdminItems = [];
     el.storeItemEditor.innerHTML = storeItemForm(null);
     bindStoreForm();
     await Promise.all([loadAdminStoreItems(true), loadStoreItems()]);
   } catch (error) {
     message.textContent = error.message;
+    if (button) button.disabled = false;
   }
 }
 
@@ -947,6 +1013,113 @@ async function loadAdminCustomers(force = false) {
   }
 }
 
+function updateAdminAccessUi() {
+  const owner = Boolean(authApi?.isOwner?.());
+  if (el.adminAccessTab) el.adminAccessTab.hidden = !owner;
+  if (el.adminDashboardKicker) {
+    el.adminDashboardKicker.textContent = owner ? "OWNER CONTROL CENTRE" : "ADMIN CONTROL CENTRE";
+  }
+  if (!owner) {
+    siteAdmins = [];
+    if (activeAdminTab === "admins") switchAdminTab("orders");
+  }
+}
+
+function adminInitials(email) {
+  const name = String(email || "AD").split("@")[0].replace(/[^a-z0-9]+/gi, " ").trim();
+  const parts = name.split(/\s+/).filter(Boolean);
+  return (parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : name.slice(0, 2) || "AD").toUpperCase();
+}
+
+function renderAdminAccess() {
+  if (!el.adminAccessList) return;
+  if (!authApi?.isOwner?.()) {
+    el.adminAccessList.innerHTML = `<div class="dashboard-error"><strong>Owner access required.</strong><span>Only the owner can change website administrators.</span></div>`;
+    return;
+  }
+  if (!siteAdmins.length) {
+    el.adminAccessList.innerHTML = `<div class="dashboard-empty"><strong>No administrators found.</strong><span>Your owner account will always keep access.</span></div>`;
+    return;
+  }
+  el.adminAccessList.innerHTML = siteAdmins.map(admin => {
+    const owner = admin.role === "owner";
+    return `<article class="admin-access-row" data-admin-email="${escapeHtml(admin.email)}">
+      <span class="admin-access-avatar">${escapeHtml(adminInitials(admin.email))}</span>
+      <div class="admin-access-details">
+        <strong>${escapeHtml(admin.email)}</strong>
+        <small>${owner ? "Permanent owner account" : `Added ${escapeHtml(formatDate(admin.created_at, false))} by ${escapeHtml(admin.created_by_email || "owner")}`}</small>
+      </div>
+      <span class="admin-role-badge${owner ? " owner" : ""}">${owner ? "Owner" : "Admin"}</span>
+      ${owner ? "" : `<button class="remove-admin-button" type="button" data-remove-admin="${escapeHtml(admin.email)}">Remove access</button>`}
+    </article>`;
+  }).join("");
+}
+
+async function loadAdminAccess(force = false) {
+  if (!authApi?.isOwner?.() || (!force && siteAdmins.length)) return;
+  if (el.adminAccessList) el.adminAccessList.innerHTML = `<div class="dashboard-loading"><i></i><span>Loading administrators…</span></div>`;
+  try {
+    const data = await authApi.apiFetch("/api/admin-access");
+    siteAdmins = Array.isArray(data.admins) ? data.admins : [];
+    renderAdminAccess();
+  } catch (error) {
+    if (el.adminAccessList) el.adminAccessList.innerHTML = `<div class="dashboard-error"><strong>Could not load administrators.</strong><span>${escapeHtml(error.message)}</span></div>`;
+  }
+}
+
+async function addAdminAccess(event) {
+  event?.preventDefault();
+  if (!authApi?.isOwner?.()) return;
+  const email = el.newAdminEmail?.value.trim().toLowerCase() || "";
+  if (!email) return;
+  const button = el.addAdminButton;
+  const message = el.adminAccessMessage;
+  if (button) button.disabled = true;
+  if (message) {
+    message.classList.remove("error");
+    message.textContent = "Adding secure admin access…";
+  }
+  try {
+    const data = await authApi.apiFetch("/api/admin-access", {
+      method: "POST",
+      body: JSON.stringify({ email })
+    });
+    siteAdmins = Array.isArray(data.admins) ? data.admins : [];
+    renderAdminAccess();
+    if (el.newAdminEmail) el.newAdminEmail.value = "";
+    if (message) message.textContent = data.alreadyOwner
+      ? "That email is already the permanent owner account."
+      : `${email} now has admin access. They should refresh the site and sign in with that exact Google account.`;
+  } catch (error) {
+    if (message) {
+      message.classList.add("error");
+      message.textContent = error.message;
+    }
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function removeAdminAccess(email) {
+  if (!authApi?.isOwner?.()) return;
+  const confirmed = confirm(`Remove admin access from ${email}?\n\nThey will lose access on their next dashboard request or page refresh.`);
+  if (!confirmed) return;
+  try {
+    const data = await authApi.apiFetch(`/api/admin-access?email=${encodeURIComponent(email)}`, { method: "DELETE" });
+    siteAdmins = Array.isArray(data.admins) ? data.admins : [];
+    renderAdminAccess();
+    if (el.adminAccessMessage) {
+      el.adminAccessMessage.classList.remove("error");
+      el.adminAccessMessage.textContent = `${email} no longer has admin access.`;
+    }
+  } catch (error) {
+    if (el.adminAccessMessage) {
+      el.adminAccessMessage.classList.add("error");
+      el.adminAccessMessage.textContent = error.message;
+    }
+  }
+}
+
 async function adjustCustomerTokens(uid) {
   const customer = adminCustomers.find(item => item.firebase_uid === uid);
   if (!customer) return;
@@ -1000,6 +1173,7 @@ function bindEvents() {
     if (activeAdminTab === "redemptions") { adminRedemptions = []; loadAdminRedemptions(true); }
     if (activeAdminTab === "tokens") loadTokenSettings();
     if (activeAdminTab === "customers") { adminCustomers = []; loadAdminCustomers(true); }
+    if (activeAdminTab === "admins") { siteAdmins = []; loadAdminAccess(true); }
   });
   el.createStoreItemButton?.addEventListener("click", newStoreItem);
   el.storeAdminSearch?.addEventListener("input", renderStoreAdminList);
@@ -1011,6 +1185,12 @@ function bindEvents() {
   [el.settingTokenSymbol, el.settingEarnRate, el.settingDailyLimit, el.settingDailyBonus, el.settingPurchaseBonus].forEach(input => input?.addEventListener("input", updateEconomyPreview));
   el.customerSearch?.addEventListener("input", renderAdminCustomers);
   el.refreshCustomers?.addEventListener("click", () => { adminCustomers = []; loadAdminCustomers(true); });
+  el.adminAccessForm?.addEventListener("submit", addAdminAccess);
+  el.refreshAdmins?.addEventListener("click", () => { siteAdmins = []; loadAdminAccess(true); });
+  el.adminAccessList?.addEventListener("click", event => {
+    const button = event.target.closest("[data-remove-admin]");
+    if (button) removeAdminAccess(button.dataset.removeAdmin);
+  });
 
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && el.redeemModal?.classList.contains("open")) closeRedeemModal();
@@ -1028,12 +1208,14 @@ function bindEvents() {
 }
 
 async function handleAuthChange(user) {
+  updateAdminAccessUi();
   if (user) {
     await loadWallet({ silent: true });
     await startEarningSession();
   } else {
     await endEarningSession();
     walletData = null;
+    siteAdmins = [];
     updateWalletSummary();
   }
   renderStoreItems();
@@ -1045,6 +1227,7 @@ async function init() {
   bindEvents();
   await loadStoreItems();
   await authApi.ready;
+  updateAdminAccessUi();
   await handleAuthChange(currentUser());
   document.addEventListener("zone6ix-auth-change", event => handleAuthChange(event.detail?.user));
   document.addEventListener("zone6ix-language-change", () => {

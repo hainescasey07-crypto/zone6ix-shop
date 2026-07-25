@@ -1,23 +1,20 @@
 import {
   cleanText,
   errorResponse,
-  isAdmin,
+  requireAdminUser,
   json,
-  requireFirebaseUser
 } from "../_lib/common.js";
 
 const TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 1_500_000;
 
-async function requireAdmin(request) {
-  const user = await requireFirebaseUser(request);
-  if (!isAdmin(user)) throw Object.assign(new Error("Admin access denied."), { status: 403 });
-  return user;
+async function requireAdmin(request, db) {
+  return requireAdminUser(request, db);
 }
 
 export async function onRequestPost({ request, env }) {
   try {
-    await requireAdmin(request);
+    await requireAdmin(request, env.DB);
     const form = await request.formData();
     const itemId = cleanText(form.get("itemId"), { name: "Item ID", min: 1, max: 100, required: true });
     const image = form.get("image");
@@ -51,7 +48,7 @@ export async function onRequestPost({ request, env }) {
 
 export async function onRequestDelete({ request, env }) {
   try {
-    await requireAdmin(request);
+    await requireAdmin(request, env.DB);
     const itemId = cleanText(new URL(request.url).searchParams.get("itemId"), { name: "Item ID", min: 1, max: 100, required: true });
     await env.DB.batch([
       env.DB.prepare("DELETE FROM store_item_images WHERE item_id = ?").bind(itemId),

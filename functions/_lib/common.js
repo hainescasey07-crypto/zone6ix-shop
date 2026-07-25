@@ -1,5 +1,6 @@
 const FIREBASE_WEB_API_KEY = "AIzaSyApYiotTOTsFFFL2H6lsxeNeEC5CjMuvXo";
-export const ADMIN_EMAIL = "hainescasey07@gmail.com";
+export const OWNER_EMAIL = "hainescasey07@gmail.com";
+export const ADMIN_EMAIL = OWNER_EMAIL;
 
 export const PRODUCTS = {
   "small-turf": { name: "Small Turf", cashPence: 350, robux: 350 },
@@ -93,8 +94,94 @@ export async function requireFirebaseUser(request) {
   };
 }
 
-export function isAdmin(user) {
-  return user?.email?.toLowerCase() === ADMIN_EMAIL;
+let adminSchemaPromise = null;
+
+export function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+export function isOwner(user) {
+  return normalizeEmail(user?.email) === OWNER_EMAIL;
+}
+
+export async function ensureAdminSchema(db) {
+  if (!adminSchemaPromise) {
+    adminSchemaPromise = (async () => {
+      await db.prepare(`
+        CREATE TABLE IF NOT EXISTS site_admins (
+          email TEXT PRIMARY KEY COLLATE NOCASE,
+          role TEXT NOT NULL DEFAULT 'admin'
+            CHECK (role IN ('owner', 'admin')),
+          active INTEGER NOT NULL DEFAULT 1
+            CHECK (active IN (0, 1)),
+          created_by_email TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run();
+
+      await db.prepare(`
+        INSERT INTO site_admins (
+          email, role, active, created_by_email, created_at, updated_at
+        ) VALUES (?, 'owner', 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ON CONFLICT(email) DO UPDATE SET
+          role = 'owner',
+          active = 1,
+          updated_at = CURRENT_TIMESTAMP
+      `).bind(OWNER_EMAIL, OWNER_EMAIL).run();
+    })().catch(error => {
+      adminSchemaPromise = null;
+      throw error;
+    });
+  }
+  await adminSchemaPromise;
+}
+
+export async function getAdminAccess(db, user) {
+  const email = normalizeEmail(user?.email);
+  if (!email || !user?.emailVerified) {
+    return { isAdmin: false, isOwner: false, role: null };
+  }
+  if (email === OWNER_EMAIL) {
+    return { isAdmin: true, isOwner: true, role: 'owner' };
+  }
+
+  await ensureAdminSchema(db);
+  const row = await db.prepare(`
+    SELECT role, active
+    FROM site_admins
+    WHERE email = ? COLLATE NOCASE
+    LIMIT 1
+  `).bind(email).first();
+
+  const allowed = Number(row?.active || 0) === 1 && row?.role === 'admin';
+  return {
+    isAdmin: allowed,
+    isOwner: false,
+    role: allowed ? 'admin' : null
+  };
+}
+
+export async function isAdmin(user, db) {
+  return (await getAdminAccess(db, user)).isAdmin;
+}
+
+export async function requireAdminUser(request, db) {
+  const user = await requireFirebaseUser(request);
+  const access = await getAdminAccess(db, user);
+  if (!access.isAdmin) {
+    throw Object.assign(new Error("Admin access denied."), { status: 403 });
+  }
+  return { ...user, adminRole: access.role, isOwner: access.isOwner };
+}
+
+export async function requireOwnerUser(request, db) {
+  const user = await requireFirebaseUser(request);
+  if (!isOwner(user) || !user.emailVerified) {
+    throw Object.assign(new Error("Owner access required."), { status: 403 });
+  }
+  await ensureAdminSchema(db);
+  return { ...user, adminRole: 'owner', isOwner: true };
 }
 
 export async function upsertUser(db, user, profile = {}) {

@@ -1,16 +1,13 @@
 import {
   cleanText,
   errorResponse,
-  isAdmin,
+  requireAdminUser,
   json,
-  requireFirebaseUser
 } from "../_lib/common.js";
 import { getTokenSettings, tokenPublicSettings } from "../_lib/tokens.js";
 
-async function requireAdmin(request) {
-  const user = await requireFirebaseUser(request);
-  if (!isAdmin(user)) throw Object.assign(new Error("Admin access denied."), { status: 403 });
-  return user;
+async function requireAdmin(request, db) {
+  return requireAdminUser(request, db);
 }
 
 function int(value, name, min, max) {
@@ -23,7 +20,7 @@ function int(value, name, min, max) {
 
 export async function onRequestGet({ request, env }) {
   try {
-    await requireAdmin(request);
+    await requireAdmin(request, env.DB);
     return json({ settings: tokenPublicSettings(await getTokenSettings(env.DB)) });
   } catch (error) {
     return errorResponse(error);
@@ -32,7 +29,7 @@ export async function onRequestGet({ request, env }) {
 
 export async function onRequestPatch({ request, env }) {
   try {
-    const admin = await requireAdmin(request);
+    const admin = await requireAdmin(request, env.DB);
     const body = await request.json().catch(() => ({}));
     const name = cleanText(body.name || "Zone Tokens", { name: "Token name", min: 2, max: 40, required: true });
     const symbol = cleanText(body.symbol || "ZT", { name: "Token symbol", min: 1, max: 8, required: true }).toUpperCase();

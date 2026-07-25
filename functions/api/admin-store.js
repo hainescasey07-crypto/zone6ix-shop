@@ -1,16 +1,13 @@
 import {
   cleanText,
   errorResponse,
-  isAdmin,
+  requireAdminUser,
   json,
-  requireFirebaseUser
 } from "../_lib/common.js";
 import { parseStoreItem, publicStoreItem, slugify } from "../_lib/store.js";
 
-async function requireAdmin(request) {
-  const user = await requireFirebaseUser(request);
-  if (!isAdmin(user)) throw Object.assign(new Error("Admin access denied."), { status: 403 });
-  return user;
+async function requireAdmin(request, db) {
+  return requireAdminUser(request, db);
 }
 
 async function allItems(db) {
@@ -29,7 +26,7 @@ async function allItems(db) {
 
 export async function onRequestGet({ request, env }) {
   try {
-    await requireAdmin(request);
+    await requireAdmin(request, env.DB);
     return json({ items: await allItems(env.DB) });
   } catch (error) {
     return errorResponse(error);
@@ -38,7 +35,7 @@ export async function onRequestGet({ request, env }) {
 
 export async function onRequestPost({ request, env }) {
   try {
-    const admin = await requireAdmin(request);
+    const admin = await requireAdmin(request, env.DB);
     const body = await request.json().catch(() => ({}));
     const item = parseStoreItem(body);
     const id = crypto.randomUUID();
@@ -74,11 +71,27 @@ export async function onRequestPost({ request, env }) {
 
 export async function onRequestPatch({ request, env }) {
   try {
-    const admin = await requireAdmin(request);
+    const admin = await requireAdmin(request, env.DB);
     const body = await request.json().catch(() => ({}));
     const itemId = cleanText(body.itemId, { name: "Item ID", min: 1, max: 100, required: true });
     const existing = await env.DB.prepare("SELECT * FROM store_items WHERE id = ?").bind(itemId).first();
     if (!existing) throw Object.assign(new Error("Store item not found."), { status: 404 });
+
+    if (body.action === "restore") {
+      await env.DB.prepare(`
+        UPDATE store_items
+        SET status = 'draft', updated_at = CURRENT_TIMESTAMP, updated_by_email = ?
+        WHERE id = ?
+      `).bind(admin.email, itemId).run();
+
+      const restored = await env.DB.prepare(`
+        SELECT i.*,
+          EXISTS(SELECT 1 FROM store_item_images img WHERE img.item_id = i.id) AS has_image,
+          (SELECT COUNT(*) FROM store_redemptions r WHERE r.item_id = i.id AND r.status NOT IN ('cancelled','refunded')) AS redemption_count
+        FROM store_items i WHERE i.id = ?
+      `).bind(itemId).first();
+      return json({ item: publicStoreItem(restored), restored: true });
+    }
 
     const item = parseStoreItem(body);
     await env.DB.prepare(`
@@ -113,14 +126,32 @@ export async function onRequestPatch({ request, env }) {
 
 export async function onRequestDelete({ request, env }) {
   try {
-    const admin = await requireAdmin(request);
-    const itemId = cleanText(new URL(request.url).searchParams.get("itemId"), { name: "Item ID", min: 1, max: 100, required: true });
-    const existing = await env.DB.prepare("SELECT id FROM store_items WHERE id = ?").bind(itemId).first();
+    const admin = await requireAdmin(request, env.DB);
+    const url = new URL(request.url);
+    const itemId = cleanText(url.searchParams.get("itemId"), { name: "Item ID", min: 1, max: 100, required: true });
+    const mode = url.searchParams.get("mode") === "permanent" ? "permanent" : "archive";
+    const existing = await env.DB.prepare("SELECT id, name FROM store_items WHERE id = ?").bind(itemId).first();
     if (!existing) throw Object.assign(new Error("Store item not found."), { status: 404 });
+
+    if (mode === "permanent") {
+      const history = await env.DB.prepare(`
+        SELECT COUNT(*) AS count FROM store_redemptions WHERE item_id = ?
+      `).bind(itemId).first();
+      if (Number(history?.count || 0) > 0) {
+        throw Object.assign(new Error("This item has redemption history, so it cannot be permanently deleted. Archive it instead."), { status: 409 });
+      }
+
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM store_item_images WHERE item_id = ?").bind(itemId),
+        env.DB.prepare("DELETE FROM store_items WHERE id = ?").bind(itemId)
+      ]);
+      return json({ deleted: true, itemId });
+    }
+
     await env.DB.prepare(`
       UPDATE store_items SET status = 'archived', updated_at = CURRENT_TIMESTAMP, updated_by_email = ? WHERE id = ?
     `).bind(admin.email, itemId).run();
-    return json({ archived: true });
+    return json({ archived: true, itemId });
   } catch (error) {
     return errorResponse(error);
   }

@@ -158,6 +158,7 @@
     "Review your order": "Revisar tu pedido",
     "Close review": "Cerrar revisión",
     "Owner account": "Cuenta del propietario",
+    "Admin account": "Cuenta de administrador",
     "My Zone6ix": "Mi Zone6ix",
     "Signed in as": "Sesión iniciada como",
     "This order and every update will be saved to My Orders.": "Este pedido y todas sus novedades se guardarán en Mis pedidos.",

@@ -1,16 +1,13 @@
 import {
   cleanText,
   errorResponse,
-  isAdmin,
+  requireAdminUser,
   json,
-  requireFirebaseUser
 } from "../_lib/common.js";
 import { REDEMPTION_STATUSES } from "../_lib/store.js";
 
-async function requireAdmin(request) {
-  const user = await requireFirebaseUser(request);
-  if (!isAdmin(user)) throw Object.assign(new Error("Admin access denied."), { status: 403 });
-  return user;
+async function requireAdmin(request, db) {
+  return requireAdminUser(request, db);
 }
 
 async function getRedemption(db, id) {
@@ -27,7 +24,7 @@ async function getRedemption(db, id) {
 
 export async function onRequestGet({ request, env }) {
   try {
-    await requireAdmin(request);
+    await requireAdmin(request, env.DB);
     const result = await env.DB.prepare(`
       SELECT r.*, i.name AS item_name, i.category, i.delivery_type, i.roblox_product_id,
              u.email, u.display_name, u.discord_username, u.gang_name,
@@ -46,7 +43,7 @@ export async function onRequestGet({ request, env }) {
 
 export async function onRequestPatch({ request, env }) {
   try {
-    const admin = await requireAdmin(request);
+    const admin = await requireAdmin(request, env.DB);
     const body = await request.json().catch(() => ({}));
     const redemptionId = cleanText(body.redemptionId, { name: "Redemption ID", min: 1, max: 100, required: true });
     const status = cleanText(body.status, { name: "Status", min: 1, max: 30, required: true });

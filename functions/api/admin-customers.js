@@ -1,21 +1,18 @@
 import {
   cleanText,
   errorResponse,
-  isAdmin,
+  requireAdminUser,
   json,
-  requireFirebaseUser
 } from "../_lib/common.js";
 import { ensureTokenWallet } from "../_lib/tokens.js";
 
-async function requireAdmin(request) {
-  const user = await requireFirebaseUser(request);
-  if (!isAdmin(user)) throw Object.assign(new Error("Admin access denied."), { status: 403 });
-  return user;
+async function requireAdmin(request, db) {
+  return requireAdminUser(request, db);
 }
 
 export async function onRequestGet({ request, env }) {
   try {
-    await requireAdmin(request);
+    await requireAdmin(request, env.DB);
     const result = await env.DB.prepare(`
       SELECT u.firebase_uid, u.email, u.display_name, u.photo_url,
              u.roblox_username, u.discord_username, u.gang_name,
@@ -38,7 +35,7 @@ export async function onRequestGet({ request, env }) {
 
 export async function onRequestPatch({ request, env }) {
   try {
-    const admin = await requireAdmin(request);
+    const admin = await requireAdmin(request, env.DB);
     const body = await request.json().catch(() => ({}));
     const uid = cleanText(body.uid, { name: "Customer ID", min: 1, max: 150, required: true });
     const deltaMilli = Math.trunc(Number(body.deltaMilli));
