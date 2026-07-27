@@ -1,5 +1,7 @@
 import { json } from "../_lib/common.js";
 
+const CACHE_ORIGIN = "https://zone6ix-preview-cache.internal";
+
 function cleanUsername(value) {
   const username = String(value || "").trim().replace(/^@/, "");
   if (!username) throw Object.assign(new Error("Enter a Roblox username first."), { status: 400 });
@@ -31,6 +33,56 @@ function parseAssetId(value) {
   return { id, url: `https://www.roblox.com/catalog/${id}`, error: "" };
 }
 
+function cacheRequest(namespace, key) {
+  const safeNamespace = encodeURIComponent(String(namespace || "preview"));
+  const safeKey = encodeURIComponent(String(key || "default"));
+  return new Request(`${CACHE_ORIGIN}/${safeNamespace}/${safeKey}`, { method: "GET" });
+}
+
+function getCache() {
+  try {
+    return globalThis.caches?.default || null;
+  } catch {
+    return null;
+  }
+}
+
+async function readCachedJson(namespace, key) {
+  const cache = getCache();
+  if (!cache) return null;
+  try {
+    const response = await cache.match(cacheRequest(namespace, key));
+    if (!response) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+async function writeCachedJson(namespace, key, value, ttlSeconds) {
+  const cache = getCache();
+  if (!cache) return;
+  try {
+    await cache.put(cacheRequest(namespace, key), new Response(JSON.stringify(value), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": `public, max-age=${ttlSeconds}`
+      }
+    }));
+  } catch {
+    // Preview caching is an optimisation. A cache failure must not break checkout.
+  }
+}
+
+async function cachedJson(namespace, key, ttlSeconds, loader) {
+  const cached = await readCachedJson(namespace, key);
+  if (cached) return cached;
+  const value = await loader();
+  await writeCachedJson(namespace, key, value, ttlSeconds);
+  return value;
+}
+
 async function fetchJson(url, options = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
@@ -39,7 +91,10 @@ async function fetchJson(url, options = {}) {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       const message = data?.errors?.[0]?.message || data?.message || `Roblox request failed (${response.status}).`;
-      throw new Error(message);
+      const error = new Error(message);
+      error.status = response.status;
+      error.retryAfter = response.headers.get("Retry-After") || "";
+      throw error;
     }
     return data;
   } finally {
@@ -47,41 +102,87 @@ async function fetchJson(url, options = {}) {
   }
 }
 
-async function getUser(username) {
-  const data = await fetchJson("https://users.roblox.com/v1/usernames/users", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usernames: [username], excludeBannedUsers: true })
+function directAvatarThumbnailUrl(userId) {
+  const params = new URLSearchParams({
+    userId: String(userId),
+    width: "420",
+    height: "420",
+    format: "png"
   });
-  const user = data?.data?.[0];
-  if (!user?.id) throw Object.assign(new Error("That Roblox username could not be found."), { status: 404 });
-  return user;
+  return `https://www.roblox.com/headshot-thumbnail/image?${params}`;
+}
+
+function directAssetThumbnailUrl(assetId) {
+  const params = new URLSearchParams({
+    assetId: String(assetId),
+    width: "420",
+    height: "420",
+    format: "png"
+  });
+  return `https://www.roblox.com/asset-thumbnail/image?${params}`;
+}
+
+async function getUser(username) {
+  return cachedJson("user", username.toLowerCase(), 21600, async () => {
+    const data = await fetchJson("https://users.roblox.com/v1/usernames/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usernames: [username], excludeBannedUsers: true })
+    });
+    const user = data?.data?.[0];
+    if (!user?.id) throw Object.assign(new Error("That Roblox username could not be found."), { status: 404 });
+    return user;
+  });
 }
 
 async function getAvatarThumbnail(userId) {
-  const params = new URLSearchParams({
-    userIds: String(userId),
-    size: "420x420",
-    format: "Png",
-    isCircular: "false"
-  });
-  const data = await fetchJson(`https://thumbnails.roblox.com/v1/users/avatar?${params}`);
-  const thumb = data?.data?.[0] || {};
-  return { imageUrl: thumb.imageUrl || "", state: thumb.state || "Unavailable" };
+  const fallback = {
+    imageUrl: directAvatarThumbnailUrl(userId),
+    state: "Fallback"
+  };
+
+  try {
+    return await cachedJson("avatar", String(userId), 600, async () => {
+      const params = new URLSearchParams({
+        userIds: String(userId),
+        size: "420x420",
+        format: "Png",
+        isCircular: "false"
+      });
+      const data = await fetchJson(`https://thumbnails.roblox.com/v1/users/avatar?${params}`);
+      const thumb = data?.data?.[0] || {};
+      return {
+        imageUrl: thumb.imageUrl || fallback.imageUrl,
+        state: thumb.state || (thumb.imageUrl ? "Completed" : "Fallback")
+      };
+    });
+  } catch {
+    // Avoid immediately repeating a failing shared-IP thumbnail request.
+    await writeCachedJson("avatar", String(userId), fallback, 120);
+    return fallback;
+  }
 }
 
-async function getAssetThumbnails(assetRecords) {
-  const ids = assetRecords.filter(item => item.id).map(item => item.id);
-  if (!ids.length) return new Map();
-  const params = new URLSearchParams({
-    assetIds: ids.join(","),
-    returnPolicy: "PlaceHolder",
-    size: "420x420",
-    format: "Png",
-    isCircular: "false"
-  });
-  const data = await fetchJson(`https://thumbnails.roblox.com/v1/assets?${params}`);
-  return new Map((data?.data || []).map(item => [String(item.targetId), item]));
+async function getAssetThumbnails() {
+  // Clothing images deliberately load through Roblox's direct thumbnail image
+  // route in the customer's browser. This removes the server-side asset
+  // thumbnail API call that was returning 429 Too Many Requests.
+  return new Map();
+}
+
+function mapAsset(record, type, assetThumbs) {
+  if (record.error) return { type, id: "", url: "", imageUrl: "", state: "Invalid", error: record.error };
+  if (!record.id) return { type, id: "", url: "", imageUrl: "", state: "NotAdded", error: "" };
+
+  const thumb = assetThumbs.get(String(record.id)) || {};
+  return {
+    type,
+    id: record.id,
+    url: record.url,
+    imageUrl: thumb.imageUrl || directAssetThumbnailUrl(record.id),
+    state: thumb.state || "Fallback",
+    error: ""
+  };
 }
 
 export async function onRequestGet({ request }) {
@@ -90,6 +191,15 @@ export async function onRequestGet({ request }) {
     const username = cleanUsername(url.searchParams.get("username"));
     const shirt = parseAssetId(url.searchParams.get("shirt"));
     const pants = parseAssetId(url.searchParams.get("pants"));
+    const previewCacheKey = [username.toLowerCase(), shirt.id || shirt.error, pants.id || pants.error].join("|");
+
+    const cachedPreview = await readCachedJson("preview", previewCacheKey);
+    if (cachedPreview) {
+      return json(cachedPreview, 200, {
+        "Cache-Control": "public, max-age=60, s-maxage=120",
+        "X-Zone6ix-Preview-Cache": "HIT"
+      });
+    }
 
     const user = await getUser(username);
     const [avatar, assetThumbs] = await Promise.all([
@@ -97,21 +207,7 @@ export async function onRequestGet({ request }) {
       getAssetThumbnails([shirt, pants])
     ]);
 
-    const mapAsset = (record, type) => {
-      if (record.error) return { type, id: "", url: "", imageUrl: "", state: "Invalid", error: record.error };
-      if (!record.id) return { type, id: "", url: "", imageUrl: "", state: "NotAdded", error: "" };
-      const thumb = assetThumbs.get(String(record.id)) || {};
-      return {
-        type,
-        id: record.id,
-        url: record.url,
-        imageUrl: thumb.imageUrl || "",
-        state: thumb.state || "Unavailable",
-        error: thumb.imageUrl ? "" : "Roblox could not load a thumbnail for this asset."
-      };
-    };
-
-    return json({
+    const payload = {
       user: {
         id: String(user.id),
         username: user.name || username,
@@ -120,11 +216,27 @@ export async function onRequestGet({ request }) {
         avatarImageUrl: avatar.imageUrl,
         avatarState: avatar.state
       },
-      shirt: mapAsset(shirt, "shirt"),
-      pants: mapAsset(pants, "pants")
-    }, 200, { "Cache-Control": "public, max-age=30, s-maxage=60" });
+      shirt: mapAsset(shirt, "shirt", assetThumbs),
+      pants: mapAsset(pants, "pants", assetThumbs)
+    };
+
+    await writeCachedJson("preview", previewCacheKey, payload, 120);
+
+    return json(payload, 200, {
+      "Cache-Control": "public, max-age=60, s-maxage=120",
+      "X-Zone6ix-Preview-Cache": "MISS"
+    });
   } catch (error) {
     const status = Number(error?.status) || (error?.name === "AbortError" ? 504 : 502);
-    return json({ error: error?.name === "AbortError" ? "Roblox took too long to respond. Try again." : (error.message || "Could not load the Roblox preview.") }, status);
+    let message = error?.name === "AbortError"
+      ? "Roblox took too long to respond. Try again."
+      : (error.message || "Could not load the Roblox preview.");
+
+    if (status === 429 || /too many requests/i.test(message)) {
+      message = "Roblox is temporarily limiting preview requests. The preview will retry automatically.";
+    }
+
+    const headers = status === 429 ? { "Retry-After": String(error?.retryAfter || "2") } : {};
+    return json({ error: message }, status, headers);
   }
 }

@@ -26,6 +26,8 @@ const previewElements = {
 let previewTimer = null;
 let previewController = null;
 let lastPreviewKey = "";
+let lastPreviewData = null;
+const previewCache = new Map();
 
 function setPreviewState(state, message = "") {
   if (previewElements.placeholder) previewElements.placeholder.hidden = state !== "placeholder";
@@ -93,6 +95,7 @@ function renderClothing(record, type) {
 }
 
 function renderPreview(data) {
+  lastPreviewData = data;
   const player = data?.user || {};
   if (previewElements.avatarName) previewElements.avatarName.textContent = player.displayName || player.username || previewTranslate("Roblox player");
   if (previewElements.avatarHandle) previewElements.avatarHandle.textContent = player.username ? `@${player.username}` : "";
@@ -116,17 +119,67 @@ function previewKey() {
   ]);
 }
 
+function rememberPreview(key, data) {
+  previewCache.set(key, data);
+  while (previewCache.size > 20) {
+    previewCache.delete(previewCache.keys().next().value);
+  }
+}
+
+function abortableDelay(milliseconds, signal) {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new DOMException("Aborted", "AbortError"));
+      return;
+    }
+    const timer = setTimeout(resolve, milliseconds);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(timer);
+      reject(new DOMException("Aborted", "AbortError"));
+    }, { once: true });
+  });
+}
+
+async function requestPreview(params, signal, attempt = 0) {
+  const response = await fetch(`/api/roblox-preview?${params}`, {
+    headers: { Accept: "application/json" },
+    signal
+  });
+  const text = await response.text();
+  let data = {};
+  try { data = text ? JSON.parse(text) : {}; } catch { data = { error: text }; }
+
+  const isRateLimited = response.status === 429 || /too many requests|temporarily limiting/i.test(String(data.error || ""));
+  if (isRateLimited && attempt === 0) {
+    const retrySeconds = Number.parseFloat(response.headers.get("Retry-After") || "2");
+    const retryDelay = Math.min(3000, Math.max(1200, Number.isFinite(retrySeconds) ? retrySeconds * 1000 : 2000));
+    await abortableDelay(retryDelay, signal);
+    return requestPreview(params, signal, 1);
+  }
+
+  if (!response.ok) throw new Error(data.error || `Preview failed (${response.status}).`);
+  return data;
+}
+
 async function loadPreview({ force = false } = {}) {
   const username = previewElements.username?.value.trim().replace(/^@/, "") || "";
   if (!username) {
     previewController?.abort();
     lastPreviewKey = "";
+    lastPreviewData = null;
     setPreviewState("placeholder");
     return;
   }
 
   const key = previewKey();
-  if (!force && key === lastPreviewKey) return;
+  if (!force && key === lastPreviewKey && lastPreviewData) return;
+  if (!force && previewCache.has(key)) {
+    previewController?.abort();
+    lastPreviewKey = key;
+    renderPreview(previewCache.get(key));
+    return;
+  }
+
   lastPreviewKey = key;
   previewController?.abort();
   previewController = new AbortController();
@@ -139,14 +192,8 @@ async function loadPreview({ force = false } = {}) {
   if (pants) params.set("pants", pants);
 
   try {
-    const response = await fetch(`/api/roblox-preview?${params}`, {
-      headers: { Accept: "application/json" },
-      signal: previewController.signal
-    });
-    const text = await response.text();
-    let data = {};
-    try { data = text ? JSON.parse(text) : {}; } catch { data = { error: text }; }
-    if (!response.ok) throw new Error(data.error || `Preview failed (${response.status}).`);
+    const data = await requestPreview(params, previewController.signal);
+    rememberPreview(key, data);
     renderPreview(data);
   } catch (error) {
     if (error?.name === "AbortError") return;
@@ -157,16 +204,19 @@ async function loadPreview({ force = false } = {}) {
 
 function schedulePreview() {
   clearTimeout(previewTimer);
-  previewTimer = setTimeout(() => loadPreview(), 650);
+  previewTimer = setTimeout(() => loadPreview(), 900);
 }
 
 [previewElements.username, previewElements.shirt, previewElements.pants].forEach(input => {
   input?.addEventListener("input", schedulePreview);
-  input?.addEventListener("change", () => loadPreview({ force: true }));
+  input?.addEventListener("change", () => loadPreview());
   input?.addEventListener("blur", () => loadPreview());
 });
 previewElements.refresh?.addEventListener("click", () => loadPreview({ force: true }));
 document.addEventListener("zone6ix-auth-change", () => setTimeout(schedulePreview, 250));
-document.addEventListener("zone6ix-language-change", () => loadPreview({ force: true }));
+document.addEventListener("zone6ix-language-change", () => {
+  if (lastPreviewData) renderPreview(lastPreviewData);
+  else schedulePreview();
+});
 window.addEventListener("pageshow", schedulePreview);
 schedulePreview();
