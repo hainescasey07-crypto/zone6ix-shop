@@ -1,5 +1,6 @@
 const tr = value => window.zone6ixI18n?.t(value) ?? String(value ?? "");
 const locale = () => window.zone6ixI18n?.locale?.() || "en-GB";
+const displayIdentity = value => window.zone6ixDisplayIdentity?.(value, "Owner") ?? String(value ?? "");
 
 let authApi = null;
 let authChangeQueue = Promise.resolve();
@@ -526,6 +527,7 @@ function switchWalletTab(name) {
 
 const adminTabPermissions = {
   orders: "viewOrders",
+  chat: "viewChat",
   store: "manageStore",
   redemptions: "manageRedemptions",
   tokens: "manageTokens",
@@ -548,7 +550,7 @@ function canOpenAdminTab(name) {
 }
 
 function firstAllowedAdminTab() {
-  return ["orders", "store", "redemptions", "tokens", "site", "security", "customers", "admins"].find(canOpenAdminTab) || "orders";
+  return ["orders", "chat", "store", "redemptions", "tokens", "site", "security", "customers", "admins"].find(canOpenAdminTab) || "orders";
 }
 
 function switchAdminTab(name) {
@@ -889,7 +891,7 @@ function renderAdminRedemptions() {
   }
   el.redemptionAdminList.innerHTML = filtered.map(item => `
     <button class="redemption-admin-row ${selectedRedemptionId === item.id ? "selected" : ""}" data-redemption-id="${escapeHtml(item.id)}" type="button">
-      <span><strong>${escapeHtml(item.redemption_code)} · ${escapeHtml(item.item_name)}</strong><small>${escapeHtml(item.roblox_username || "No Roblox username")} · ${escapeHtml(item.email)}</small></span>
+      <span><strong>${escapeHtml(item.redemption_code)} · ${escapeHtml(item.item_name)}</strong><small>${escapeHtml(item.roblox_username || "No Roblox username")} · ${escapeHtml(displayIdentity(item.email))}</small></span>
       <span><strong class="status-${escapeHtml(item.status)}">${escapeHtml(redemptionStatus(item.status))}</strong><small>${escapeHtml(tokenLabel(item.total_price_milli))} · ${escapeHtml(formatDate(item.created_at))}</small></span>
     </button>`).join("");
   el.redemptionAdminList.querySelectorAll("[data-redemption-id]").forEach(button => button.addEventListener("click", () => selectAdminRedemption(button.dataset.redemptionId)));
@@ -917,7 +919,7 @@ function selectAdminRedemption(id) {
   renderAdminRedemptions();
   if (!item) return;
   el.redemptionEditor.innerHTML = `<div class="admin-editor-head"><div><small>${escapeHtml(item.redemption_code)}</small><h3>${escapeHtml(item.item_name)}</h3></div><span class="order-status-pill status-${escapeHtml(item.status)}">${escapeHtml(redemptionStatus(item.status))}</span></div>
-    <div class="admin-detail-grid"><div class="admin-detail"><span>Customer</span><strong>${escapeHtml(item.display_name || "Unknown")}</strong></div><div class="admin-detail"><span>Email</span><strong>${escapeHtml(item.email)}</strong></div><div class="admin-detail"><span>Roblox</span><strong>${escapeHtml(item.roblox_username || "Not provided")}</strong></div><div class="admin-detail"><span>Gang</span><strong>${escapeHtml(item.gang_name || "Not provided")}</strong></div><div class="admin-detail"><span>Quantity</span><strong>${Number(item.quantity || 1)}</strong></div><div class="admin-detail"><span>Token cost</span><strong>${escapeHtml(tokenLabel(item.total_price_milli))}</strong></div><div class="admin-detail"><span>Delivery</span><strong>${escapeHtml(item.delivery_type || "manual")}</strong></div><div class="admin-detail"><span>Product ID</span><strong>${escapeHtml(item.roblox_product_id || "Not set")}</strong></div></div>
+    <div class="admin-detail-grid"><div class="admin-detail"><span>Customer</span><strong>${escapeHtml(item.display_name || "Unknown")}</strong></div><div class="admin-detail"><span>Email</span><strong>${escapeHtml(displayIdentity(item.email))}</strong></div><div class="admin-detail"><span>Roblox</span><strong>${escapeHtml(item.roblox_username || "Not provided")}</strong></div><div class="admin-detail"><span>Gang</span><strong>${escapeHtml(item.gang_name || "Not provided")}</strong></div><div class="admin-detail"><span>Quantity</span><strong>${Number(item.quantity || 1)}</strong></div><div class="admin-detail"><span>Token cost</span><strong>${escapeHtml(tokenLabel(item.total_price_milli))}</strong></div><div class="admin-detail"><span>Delivery</span><strong>${escapeHtml(item.delivery_type || "manual")}</strong></div><div class="admin-detail"><span>Product ID</span><strong>${escapeHtml(item.roblox_product_id || "Not set")}</strong></div></div>
     <label class="admin-editor-field"><span>Redemption status</span><select id="redemptionEditorStatus">${["pending","approved","in_progress","delivered","cancelled","refunded"].map(status => `<option value="${status}" ${item.status === status ? "selected" : ""}>${redemptionStatus(status)}</option>`).join("")}</select></label>
     <label class="admin-editor-field"><span>Customer-visible update</span><textarea id="redemptionCustomerUpdate">${escapeHtml(item.customer_update || "")}</textarea></label>
     <label class="admin-editor-field"><span>Private admin note</span><textarea id="redemptionPrivateNote">${escapeHtml(item.admin_private_note || "")}</textarea></label>
@@ -1052,7 +1054,7 @@ function renderAdminCustomers() {
   }
   const canAdjust = Boolean(adminPermissions().manageCustomers);
   el.customerTableBody.innerHTML = filtered.map(customer => `<tr>
-    <td><strong>${escapeHtml(customer.display_name || "Zone6ix customer")}</strong><small>${escapeHtml(customer.email)}</small></td>
+    <td><strong>${escapeHtml(customer.display_name || "Zone6ix customer")}</strong><small>${escapeHtml(displayIdentity(customer.email))}</small></td>
     <td><strong>${escapeHtml(customer.roblox_username || "—")}</strong><small>${escapeHtml(customer.gang_name || customer.discord_username || "—")}</small></td>
     <td><strong>${escapeHtml(tokenLabel(customer.balance_milli))}</strong><small>${escapeHtml(tokenLabel(customer.lifetime_earned_milli))} earned</small></td>
     <td>${Number(customer.order_count || 0)}</td><td>${Number(customer.redemption_count || 0)}</td>
@@ -1113,8 +1115,8 @@ function renderAdminAccess() {
     return `<article class="admin-access-row" data-admin-email="${escapeHtml(admin.email)}">
       <span class="admin-access-avatar">${escapeHtml(adminInitials(admin.email))}</span>
       <div class="admin-access-details">
-        <strong>${escapeHtml(admin.email)}</strong>
-        <small>${owner ? "Permanent owner account" : `Added ${escapeHtml(formatDate(admin.created_at, false))} by ${escapeHtml(admin.created_by_email || "owner")}`}</small>
+        <strong>${escapeHtml(displayIdentity(admin.email))}</strong>
+        <small>${owner ? "Permanent owner account" : `Added ${escapeHtml(formatDate(admin.created_at, false))} by ${escapeHtml(displayIdentity(admin.created_by_email || "owner"))}`}</small>
       </div>
       ${owner ? `<span class="admin-role-badge owner">Owner</span>` : `<label class="admin-role-control"><span>Role</span><select data-admin-role-email="${escapeHtml(admin.email)}">
         ${[["manager","Manager"],["orders","Orders admin"],["store","Store admin"],["support","Support"]].map(([value,label]) => `<option value="${value}" ${admin.role_name === value ? "selected" : ""}>${label}</option>`).join("")}
@@ -1159,7 +1161,7 @@ async function addAdminAccess(event) {
     if (el.newAdminEmail) el.newAdminEmail.value = "";
     if (message) message.textContent = data.alreadyOwner
       ? "That email is already the permanent owner account."
-      : `${email} now has ${el.newAdminRole?.selectedOptions?.[0]?.textContent || "admin"} access. They should refresh the site and sign in with that exact Google account.`;
+      : `${displayIdentity(email)} now has ${el.newAdminRole?.selectedOptions?.[0]?.textContent || "admin"} access. They should refresh the site and sign in with that exact Google account.`;
   } catch (error) {
     if (message) {
       message.classList.add("error");
@@ -1183,7 +1185,7 @@ async function changeAdminRole(email, roleName, select) {
     renderAdminAccess();
     if (el.adminAccessMessage) {
       el.adminAccessMessage.classList.remove("error");
-      el.adminAccessMessage.textContent = `${email} role changed to ${roleName}.`;
+      el.adminAccessMessage.textContent = `${displayIdentity(email)} role changed to ${roleName}.`;
     }
   } catch (error) {
     select.value = previous;
@@ -1197,7 +1199,7 @@ async function changeAdminRole(email, roleName, select) {
 
 async function removeAdminAccess(email) {
   if (!authApi?.isOwner?.()) return;
-  const confirmed = confirm(`Remove admin access from ${email}?\n\nThey will lose access on their next dashboard request or page refresh.`);
+  const confirmed = confirm(`Remove admin access from ${displayIdentity(email)}?\n\nThey will lose access on their next dashboard request or page refresh.`);
   if (!confirmed) return;
   try {
     const data = await authApi.apiFetch(`/api/admin-access?email=${encodeURIComponent(email)}`, { method: "DELETE" });
@@ -1205,7 +1207,7 @@ async function removeAdminAccess(email) {
     renderAdminAccess();
     if (el.adminAccessMessage) {
       el.adminAccessMessage.classList.remove("error");
-      el.adminAccessMessage.textContent = `${email} no longer has admin access.`;
+      el.adminAccessMessage.textContent = `${displayIdentity(email)} no longer has admin access.`;
     }
   } catch (error) {
     if (el.adminAccessMessage) {
@@ -1219,7 +1221,7 @@ async function adjustCustomerTokens(uid) {
   if (!adminPermissions().manageCustomers) return;
   const customer = adminCustomers.find(item => item.firebase_uid === uid);
   if (!customer) return;
-  const amountText = prompt(`Add or remove Zone Tokens for ${customer.email}.\nUse a negative number to remove tokens.`, "10");
+  const amountText = prompt(`Add or remove Zone Tokens for ${displayIdentity(customer.email)}.\nUse a negative number to remove tokens.`, "10");
   if (amountText === null) return;
   const amount = Number(amountText);
   if (!Number.isFinite(amount) || amount === 0) return alert("Enter a valid non-zero amount.");

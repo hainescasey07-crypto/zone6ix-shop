@@ -30,13 +30,30 @@ const siteFieldIds = {
   siteName: "siteSettingName",
   studioLabel: "siteSettingStudio",
   statusText: "siteSettingStatus",
-  contactEmail: "siteSettingEmail",
+  contactDisplay: "siteSettingContact",
   heroLineOne: "siteSettingHero1",
   heroLineTwo: "siteSettingHero2",
   heroLineThree: "siteSettingHero3",
   announcementText: "siteSettingAnnouncement",
   accentPrimary: "siteSettingAccent1",
   accentSecondary: "siteSettingAccent2",
+  themePreset: "siteThemePreset",
+  themeBackground: "siteThemeBackground",
+  themeBackgroundAlt: "siteThemeBackgroundAlt",
+  themeSurface: "siteThemeSurface",
+  themeSurfaceAlt: "siteThemeSurfaceAlt",
+  themeNav: "siteThemeNav",
+  themeText: "siteThemeText",
+  themeMuted: "siteThemeMuted",
+  themeBorder: "siteThemeBorder",
+  themeGlow: "siteThemeGlow",
+  themeSuccess: "siteThemeSuccess",
+  themeWarning: "siteThemeWarning",
+  themeDanger: "siteThemeDanger",
+  seasonalEffect: "siteSeasonalEffect",
+  seasonalIntensity: "siteSeasonalIntensity",
+  seasonalStart: "siteSeasonalStart",
+  seasonalEnd: "siteSeasonalEnd",
   primaryCta: "siteSettingPrimaryCta",
   secondaryCta: "siteSettingSecondaryCta",
   heroLead: "siteSettingLead",
@@ -78,6 +95,53 @@ function setMessage(element, text, isError = false) {
   element.classList.toggle("error", Boolean(isError));
 }
 
+const THEME_CUSTOM_FIELD_IDS = new Set([
+  "siteSettingAccent1", "siteSettingAccent2", "siteThemeBackground", "siteThemeBackgroundAlt",
+  "siteThemeSurface", "siteThemeSurfaceAlt", "siteThemeNav", "siteThemeText", "siteThemeMuted",
+  "siteThemeBorder", "siteThemeGlow", "siteThemeSuccess", "siteThemeWarning", "siteThemeDanger"
+]);
+
+const THEME_PRESETS = {
+  zone6ix: { accentPrimary: "#4bbcff", accentSecondary: "#1769ff", themeBackground: "#05070a", themeBackgroundAlt: "#080b10", themeSurface: "#0d1219", themeSurfaceAlt: "#111821", themeNav: "#070a0e", themeText: "#f4f8fb", themeMuted: "#8f9aa7", themeBorder: "#24313d", themeGlow: "#35aaff", themeSuccess: "#65e5ae", themeWarning: "#f2bd5c", themeDanger: "#ff667a", seasonalEffect: "none", seasonalEnabled: false },
+  halloween: { accentPrimary: "#ff7a18", accentSecondary: "#8d3cff", themeBackground: "#08050b", themeBackgroundAlt: "#110817", themeSurface: "#160d1d", themeSurfaceAlt: "#24102f", themeNav: "#0b0710", themeText: "#fff4e8", themeMuted: "#bda9c9", themeBorder: "#553168", themeGlow: "#ff7a18", themeSuccess: "#7ce38b", themeWarning: "#ffb24d", themeDanger: "#ff4d6d", seasonalEffect: "halloween", seasonalEnabled: true },
+  christmas: { accentPrimary: "#40d98a", accentSecondary: "#e84d5b", themeBackground: "#06100d", themeBackgroundAlt: "#0a1915", themeSurface: "#0d221c", themeSurfaceAlt: "#143128", themeNav: "#07130f", themeText: "#f4fff9", themeMuted: "#9bbcaf", themeBorder: "#315e4d", themeGlow: "#55e69a", themeSuccess: "#55e69a", themeWarning: "#f3c65a", themeDanger: "#f15b66", seasonalEffect: "christmas", seasonalEnabled: true },
+  valentine: { accentPrimary: "#ff5f9e", accentSecondary: "#9d5cff", themeBackground: "#0d0710", themeBackgroundAlt: "#160b19", themeSurface: "#201022", themeSurfaceAlt: "#2c1530", themeNav: "#120914", themeText: "#fff5fb", themeMuted: "#c4a3b8", themeBorder: "#60314f", themeGlow: "#ff69aa", themeSuccess: "#71dfa5", themeWarning: "#ffc06a", themeDanger: "#ff537c", seasonalEffect: "none", seasonalEnabled: false },
+  summer: { accentPrimary: "#43d9ff", accentSecondary: "#ffb347", themeBackground: "#041016", themeBackgroundAlt: "#071a21", themeSurface: "#0c232b", themeSurfaceAlt: "#12313a", themeNav: "#06151b", themeText: "#f2fcff", themeMuted: "#91b6c0", themeBorder: "#285965", themeGlow: "#43d9ff", themeSuccess: "#68e3ad", themeWarning: "#ffba57", themeDanger: "#ff6877", seasonalEffect: "none", seasonalEnabled: false },
+  blackout: { accentPrimary: "#e8edf2", accentSecondary: "#707b86", themeBackground: "#000000", themeBackgroundAlt: "#050505", themeSurface: "#0b0b0b", themeSurfaceAlt: "#141414", themeNav: "#030303", themeText: "#f5f5f5", themeMuted: "#999999", themeBorder: "#333333", themeGlow: "#ffffff", themeSuccess: "#a4e8c2", themeWarning: "#e7c36a", themeDanger: "#ff6b78", seasonalEffect: "none", seasonalEnabled: false }
+};
+
+function updateThemePresetButtons(name) {
+  document.querySelectorAll("[data-theme-preset]").forEach(button => button.classList.toggle("active", button.dataset.themePreset === name));
+}
+
+function currentThemePreview() {
+  return { ...(smData.settings || {}), ...readSettings() };
+}
+
+function previewTheme() {
+  const settings = currentThemePreview();
+  window.zone6ixApplySiteSettings?.(settings);
+}
+
+function applyThemePreset(name) {
+  const preset = THEME_PRESETS[name];
+  if (!preset) return;
+  const hidden = document.getElementById("siteThemePreset");
+  if (hidden) hidden.value = name;
+  Object.entries(preset).forEach(([key, value]) => {
+    if (key === "seasonalEnabled") {
+      const checkbox = document.getElementById("siteSeasonalEnabled");
+      if (checkbox) checkbox.checked = Boolean(value);
+      return;
+    }
+    const id = siteFieldIds[key];
+    const input = id ? document.getElementById(id) : null;
+    if (input) input.value = value;
+  });
+  updateThemePresetButtons(name);
+  previewTheme();
+}
+
 function setFormValues(settings = {}) {
   Object.entries(siteFieldIds).forEach(([key, id]) => {
     const input = document.getElementById(id);
@@ -85,6 +149,9 @@ function setFormValues(settings = {}) {
   });
   const open = document.getElementById("siteSettingOpen");
   if (open) open.checked = settings.statusOpen !== false;
+  const seasonal = document.getElementById("siteSeasonalEnabled");
+  if (seasonal) seasonal.checked = settings.seasonalEnabled === true;
+  updateThemePresetButtons(settings.themePreset || "custom");
   Object.entries(legalFieldIds).forEach(([key, id]) => {
     const input = document.getElementById(id);
     if (input) input.value = settings[key] ?? "";
@@ -98,6 +165,7 @@ function readSettings(keys = Object.keys(siteFieldIds)) {
     if (input) settings[key] = input.value.trim();
   });
   settings.statusOpen = Boolean(document.getElementById("siteSettingOpen")?.checked);
+  settings.seasonalEnabled = Boolean(document.getElementById("siteSeasonalEnabled")?.checked);
   return settings;
 }
 
@@ -285,7 +353,7 @@ function renderAudit(entries) {
     const date = new Date(String(entry.created_at || "").replace(" ", "T") + (String(entry.created_at || "").includes("T") ? "" : "Z"));
     return `<article class="audit-entry">
       <span class="audit-marker"></span>
-      <div><strong>${smEscape(auditActionLabel(entry.action))}</strong><p>${smEscape(entry.admin_email)} · ${smEscape(entry.target_type)}${entry.target_id ? ` / ${smEscape(entry.target_id)}` : ""}</p><small>${smEscape(details)}</small></div>
+      <div><strong>${smEscape(auditActionLabel(entry.action))}</strong><p>${smEscape(window.zone6ixDisplayIdentity?.(entry.admin_email, "Owner") || entry.admin_email)} · ${smEscape(entry.target_type)}${entry.target_id ? ` / ${smEscape(entry.target_id)}` : ""}</p><small>${smEscape(details)}</small></div>
       <time>${Number.isNaN(date.getTime()) ? smEscape(entry.created_at) : date.toLocaleString("en-GB")}</time>
     </article>`;
   }).join("");
@@ -394,6 +462,16 @@ function updatePermissionUi() {
 
 function bind() {
   sm.siteForm?.addEventListener("submit", saveSiteSettings);
+  document.querySelectorAll("[data-theme-preset]").forEach(button => button.addEventListener("click", () => applyThemePreset(button.dataset.themePreset)));
+  [
+    ...Object.values(siteFieldIds).map(id => document.getElementById(id)),
+    document.getElementById("siteSeasonalEnabled")
+  ].filter(Boolean).forEach(input => input.addEventListener("input", () => {
+    const preset = document.getElementById("siteThemePreset");
+    if (preset && THEME_CUSTOM_FIELD_IDS.has(input.id)) preset.value = "custom";
+    updateThemePresetButtons(preset?.value || "custom");
+    previewTheme();
+  }));
   sm.legalForm?.addEventListener("submit", saveLegalSettings);
   sm.refreshSite?.addEventListener("click", () => { smLoaded = false; loadSiteManager(true); });
   sm.productList?.addEventListener("click", event => {

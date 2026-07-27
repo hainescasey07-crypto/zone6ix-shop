@@ -28,8 +28,27 @@ export const DEFAULT_SITE_SETTINGS = {
   secondaryCta: "Build an order",
   announcementText: "Custom orders are currently open.",
   contactEmail: "hainescasey07@gmail.com",
+  contactDisplay: "Discord: Ykzues",
   accentPrimary: "#4bbcff",
   accentSecondary: "#1769ff",
+  themePreset: "zone6ix",
+  themeBackground: "#05070a",
+  themeBackgroundAlt: "#080b10",
+  themeSurface: "#0d1219",
+  themeSurfaceAlt: "#111821",
+  themeNav: "#070a0e",
+  themeText: "#f4f8fb",
+  themeMuted: "#8f9aa7",
+  themeBorder: "#24313d",
+  themeGlow: "#35aaff",
+  themeSuccess: "#65e5ae",
+  themeWarning: "#f2bd5c",
+  themeDanger: "#ff667a",
+  seasonalEffect: "none",
+  seasonalEnabled: false,
+  seasonalIntensity: 2,
+  seasonalStart: "",
+  seasonalEnd: "",
   termsText: "Orders are custom digital services for the Zone6ix Roblox experience. Customers must provide accurate Roblox, Discord and order information. Work begins after payment is confirmed. Delivery time depends on complexity and communication. Requests that are unsafe, unlawful, impossible or unsuitable for Zone6ix may be refused or adjusted.",
   privacyText: "Zone6ix stores the information needed to provide accounts, orders and rewards, including your Google account identifier, email address, display name, Roblox username, Discord username, gang details, order history, token activity and redemption history. Payment card details are handled by Stripe and are not stored by Zone6ix. Information is used only to operate the shop, fulfil orders, prevent abuse and provide support.",
   refundText: "Because products are custom digital work, refunds are considered before work begins or when Zone6ix cannot deliver the agreed order. Completed or substantially started custom work is normally non-refundable. Stripe refunds must be processed before the matching website order is deleted. Zone Tokens have no cash value and cannot be exchanged for money.",
@@ -151,6 +170,17 @@ function cleanHex(value, fallback) {
   return /^#[0-9a-f]{6}$/i.test(text) ? text.toLowerCase() : fallback;
 }
 
+
+function cleanChoice(value, allowed, fallback) {
+  const text = String(value || "").trim().toLowerCase();
+  return allowed.includes(text) ? text : fallback;
+}
+
+function cleanDate(value) {
+  const text = String(value || "").trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : "";
+}
+
 function cleanEmail(value) {
   const email = cleanText(value, { name: "Contact email", min: 3, max: 254, required: true }).toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -189,8 +219,27 @@ export function sanitizeSiteSettings(input = {}, existing = DEFAULT_SITE_SETTING
     secondaryCta: cleanText(source.secondaryCta, { name: "Secondary button", min: 1, max: 40, required: true }),
     announcementText: cleanText(source.announcementText, { name: "Announcement", max: 180 }),
     contactEmail: cleanEmail(source.contactEmail),
+    contactDisplay: cleanText(source.contactDisplay, { name: "Public contact", min: 1, max: 100, required: true }),
     accentPrimary: cleanHex(source.accentPrimary, DEFAULT_SITE_SETTINGS.accentPrimary),
     accentSecondary: cleanHex(source.accentSecondary, DEFAULT_SITE_SETTINGS.accentSecondary),
+    themePreset: cleanChoice(source.themePreset, ["zone6ix", "halloween", "christmas", "valentine", "summer", "blackout", "custom"], DEFAULT_SITE_SETTINGS.themePreset),
+    themeBackground: cleanHex(source.themeBackground, DEFAULT_SITE_SETTINGS.themeBackground),
+    themeBackgroundAlt: cleanHex(source.themeBackgroundAlt, DEFAULT_SITE_SETTINGS.themeBackgroundAlt),
+    themeSurface: cleanHex(source.themeSurface, DEFAULT_SITE_SETTINGS.themeSurface),
+    themeSurfaceAlt: cleanHex(source.themeSurfaceAlt, DEFAULT_SITE_SETTINGS.themeSurfaceAlt),
+    themeNav: cleanHex(source.themeNav, DEFAULT_SITE_SETTINGS.themeNav),
+    themeText: cleanHex(source.themeText, DEFAULT_SITE_SETTINGS.themeText),
+    themeMuted: cleanHex(source.themeMuted, DEFAULT_SITE_SETTINGS.themeMuted),
+    themeBorder: cleanHex(source.themeBorder, DEFAULT_SITE_SETTINGS.themeBorder),
+    themeGlow: cleanHex(source.themeGlow, DEFAULT_SITE_SETTINGS.themeGlow),
+    themeSuccess: cleanHex(source.themeSuccess, DEFAULT_SITE_SETTINGS.themeSuccess),
+    themeWarning: cleanHex(source.themeWarning, DEFAULT_SITE_SETTINGS.themeWarning),
+    themeDanger: cleanHex(source.themeDanger, DEFAULT_SITE_SETTINGS.themeDanger),
+    seasonalEffect: cleanChoice(source.seasonalEffect, ["none", "halloween", "christmas"], DEFAULT_SITE_SETTINGS.seasonalEffect),
+    seasonalEnabled: source.seasonalEnabled === true || Number(source.seasonalEnabled) === 1,
+    seasonalIntensity: Math.max(1, Math.min(3, Math.round(Number(source.seasonalIntensity) || DEFAULT_SITE_SETTINGS.seasonalIntensity))),
+    seasonalStart: cleanDate(source.seasonalStart),
+    seasonalEnd: cleanDate(source.seasonalEnd),
     termsText: cleanText(source.termsText, { name: "Terms", min: 20, max: 12000, required: true }),
     privacyText: cleanText(source.privacyText, { name: "Privacy notice", min: 20, max: 12000, required: true }),
     refundText: cleanText(source.refundText, { name: "Refund policy", min: 20, max: 12000, required: true }),

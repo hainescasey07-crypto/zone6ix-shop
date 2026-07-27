@@ -1,8 +1,9 @@
-import { errorResponse, requirePermission } from "../_lib/common.js";
+import { errorResponse, OWNER_EMAIL, requirePermission } from "../_lib/common.js";
 import { ensureSiteSchema } from "../_lib/site.js";
 
 function csvCell(value) {
   let text = value === null || value === undefined ? "" : String(value);
+  text = text.replace(new RegExp(OWNER_EMAIL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), "Owner");
   if (/^[=+\-@]/.test(text)) text = `'${text}`;
   return `"${text.replaceAll('"', '""')}"`;
 }

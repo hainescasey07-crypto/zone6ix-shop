@@ -101,30 +101,35 @@ export const ROLE_PERMISSIONS = {
     viewOrders: true, manageOrders: true, deleteOrders: true,
     manageStore: true, manageRedemptions: true, manageTokens: true,
     viewCustomers: true, manageCustomers: true, manageSite: true,
+    viewChat: true, manageChat: true,
     exportData: true, viewAudit: true, manageAdmins: true
   },
   manager: {
     viewOrders: true, manageOrders: true, deleteOrders: true,
     manageStore: true, manageRedemptions: true, manageTokens: true,
     viewCustomers: true, manageCustomers: true, manageSite: true,
+    viewChat: true, manageChat: true,
     exportData: true, viewAudit: true, manageAdmins: false
   },
   orders: {
     viewOrders: true, manageOrders: true, deleteOrders: false,
     manageStore: false, manageRedemptions: false, manageTokens: false,
     viewCustomers: true, manageCustomers: false, manageSite: false,
+    viewChat: true, manageChat: true,
     exportData: true, viewAudit: false, manageAdmins: false
   },
   store: {
     viewOrders: false, manageOrders: false, deleteOrders: false,
     manageStore: true, manageRedemptions: true, manageTokens: false,
     viewCustomers: true, manageCustomers: false, manageSite: false,
+    viewChat: true, manageChat: true,
     exportData: true, viewAudit: false, manageAdmins: false
   },
   support: {
     viewOrders: true, manageOrders: false, deleteOrders: false,
     manageStore: false, manageRedemptions: false, manageTokens: false,
     viewCustomers: true, manageCustomers: false, manageSite: false,
+    viewChat: true, manageChat: true,
     exportData: false, viewAudit: false, manageAdmins: false
   }
 };

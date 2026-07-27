@@ -1,0 +1,25 @@
+FILES CHANGED FROM THE LOCKED MASTER BASELINE
+============================================
+
+NEW
+- chat.js — customer and admin chat interface, polling, unread counts, typing, attachments and moderation controls.
+- display-utils.js — central visible-owner-email masking.
+- functions/_lib/chat.js — D1 chat schema, validation and shared chat helpers.
+- functions/api/chat.js — authenticated customer chat API.
+- functions/api/admin-chat.js — permission-protected admin support API.
+
+UPDATED
+- index.html — customer chat, admin inbox, Theme Studio and Discord contact UI.
+- styles.css — live themes, seasonal effects and responsive chat styling.
+- script.js — applies/polls live settings, seasonal effects and Discord copy control while preserving checkout.
+- site-manager.js — theme presets, live preview and new public contact field.
+- account.js — visible owner identity masking and chat permission fallback.
+- tokens-store.js — Live Chat admin tab permission and visible owner identity masking.
+- functions/_lib/common.js — adds viewChat/manageChat permissions to existing roles.
+- functions/_lib/site.js — theme/public-contact settings and validation.
+- functions/api/site-config.js — returns public settings without the hidden contact email.
+- functions/api/admin-site.js — Site Manager does not return the hidden contact email.
+- functions/api/admin-export.js — masks the owner email as Owner in downloaded CSV values.
+
+UNCHANGED CORE FILES ARE ALSO INCLUDED
+The ZIP is a full upload-ready project so GitHub receives one consistent version.

@@ -4,16 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Zone6ix Customs — premium custom turfs, gang weapons and individual player customisation.">
-  <meta name="theme-color" content="#05070a">
+  <meta name="theme-color" id="browserThemeColour" content="#05070a">
   <title>Zone6ix Customs</title>
   <link rel="icon" href="/favicon.ico?v=4" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4">
   <link rel="manifest" href="/site.webmanifest?v=4">
-  <link rel="stylesheet" href="styles.css?v=session-scroll-fix-1">
+  <link rel="stylesheet" href="styles.css?v=live-chat-theme-studio-1">
 </head>
 <body>
+  <div class="seasonal-effects" id="seasonalEffects" aria-hidden="true"></div>
   <div class="scroll-progress" id="scrollProgress"></div>
   <div class="cursor-light" id="cursorLight" aria-hidden="true"></div>
   <div class="ambient ambient-one" aria-hidden="true"></div>
@@ -87,6 +88,10 @@
           <button type="button" id="myOrdersButton" role="menuitem">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
             <span>My orders</span>
+          </button>
+          <button type="button" id="supportMenuButton" role="menuitem">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v11H9l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg>
+            <span>Live support</span><b class="menu-unread-badge" id="supportMenuBadge" hidden>0</b>
           </button>
           <button type="button" id="adminButton" role="menuitem" hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.7 2.8 8.3 7 10 4.2-1.7 7-5.3 7-10V6l-7-3Z"/><path d="M9 12h6M12 9v6"/></svg>
@@ -447,7 +452,7 @@
             </label>
             <label>
               <span>Email address</span>
-              <input type="email" id="customerEmail" name="email" placeholder="Filled from your Google account" readonly required>
+              <input type="text" id="customerEmail" name="email" placeholder="Filled from your Google account" readonly required>
             </label>
             <label>
               <span>Discord username</span>
@@ -535,11 +540,56 @@
         <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 56 56"><path d="M8 10h40L31 28h17L24 48H8l17-19H8z"/></svg></span>
         <span class="brand-copy"><strong>ZONE6IX</strong><small>CUSTOM STUDIO</small></span>
       </a>
-      <p id="footerDescription">Premium custom content for the Zone6ix Roblox experience.</p>
+      <p id="footerDescription"><span id="footerDescriptionText">Premium custom content for the Zone6ix Roblox experience.</span><button class="footer-contact-copy" id="footerContactButton" type="button" title="Copy Discord username"><span id="footerContactText">Discord: Ykzues</span><small id="footerContactHint">Copy</small></button></p>
       <div class="footer-links"><a href="#collections">Collections</a><a href="#process">Process</a><a href="#order">Order</a><button type="button" data-legal-tab="terms">Terms</button><button type="button" data-legal-tab="privacy">Privacy</button><button type="button" data-legal-tab="refunds">Refunds</button></div>
       <span class="footer-status" id="footerStatus"><i></i> Custom orders open</span>
     </div>
   </footer>
+
+
+  <button class="support-chat-launcher" id="supportChatLauncher" type="button" aria-label="Open Zone6ix live support" aria-expanded="false">
+    <span class="support-launcher-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v12H9l-5 4V5Z"/><path d="M8 9h8M8 13h5"/></svg></span>
+    <span class="support-launcher-copy"><strong>Live support</strong><small id="supportLauncherStatus">Sign in to chat</small></span>
+    <b id="supportChatBadge" hidden>0</b>
+  </button>
+
+  <section class="support-chat-panel" id="supportChatPanel" aria-hidden="true" aria-label="Zone6ix live support">
+    <header class="support-chat-header">
+      <div class="support-brand-orb"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/><path d="m8.5 9 7-3-4 5h4l-7 6 3-5h-4l1-3Z"/></svg></div>
+      <div><strong id="supportDisplayName">Zone6ix Support</strong><small><i id="supportStatusDot"></i><span id="supportStatusText">Offline</span> · <span id="supportReplyText">Leave a message</span></small></div>
+      <button type="button" id="supportMinimise" aria-label="Minimise chat"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+    </header>
+    <div class="support-chat-toolbar" id="supportChatToolbar" hidden>
+      <select id="supportConversationSelect" aria-label="Choose support conversation"></select>
+      <button type="button" id="supportNewConversation">New</button>
+    </div>
+    <div class="support-chat-signin" id="supportChatSignin">
+      <div class="support-empty-icon"><svg viewBox="0 0 64 64"><path d="M9 12h46v34H26L13 56V46H9V12Z"/><path d="M19 25h26M19 34h17"/></svg></div>
+      <strong>Talk directly to Zone6ix</strong>
+      <p>Sign in with Google so your messages, replies and order details stay saved.</p>
+      <button class="dashboard-primary" id="supportSignIn" type="button">Sign in to start</button>
+    </div>
+    <div class="support-chat-start" id="supportChatStart" hidden>
+      <div class="support-empty-icon"><svg viewBox="0 0 64 64"><path d="M9 12h46v34H26L13 56V46H9V12Z"/><path d="M19 25h26M19 34h17"/></svg></div>
+      <strong>Start a conversation</strong>
+      <p>Link an order when your question is about a purchase, or choose general support.</p>
+      <label><span>Related order</span><select id="supportOrderSelect"><option value="">General support</option></select></label>
+      <button class="dashboard-primary" id="supportStartConversation" type="button">Start chat</button>
+      <small id="supportStartMessage"></small>
+    </div>
+    <div class="support-chat-active" id="supportChatActive" hidden>
+      <div class="support-conversation-meta" id="supportConversationMeta"></div>
+      <div class="support-message-list" id="supportMessageList"><div class="dashboard-loading"><i></i><span>Loading messages…</span></div></div>
+      <div class="support-typing" id="supportAdminTyping" hidden><i></i><i></i><i></i><span>Zone6ix is typing</span></div>
+      <div class="support-image-preview" id="supportImagePreview" hidden></div>
+      <form class="support-compose" id="supportComposeForm">
+        <label class="support-attach" title="Attach image"><input id="supportImageInput" type="file" accept="image/jpeg,image/png,image/webp"><svg viewBox="0 0 24 24"><path d="m8 12 5-5a4 4 0 0 1 6 6l-7 7a6 6 0 0 1-9-9l8-8"/></svg></label>
+        <textarea id="supportMessageInput" maxlength="2500" rows="1" placeholder="Write a message…"></textarea>
+        <button type="submit" id="supportSendButton" aria-label="Send message"><svg viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2-7-8-3Z"/><path d="m11 14 4-4"/></svg></button>
+      </form>
+      <div class="support-chat-actions"><button type="button" id="supportConversationToggle">Close conversation</button><span id="supportComposeMessage"></span></div>
+    </div>
+  </section>
 
   <div class="basket-dock" id="basketDock">
     <button type="button" id="basketDockButton">
@@ -708,6 +758,7 @@
 
     <nav class="admin-section-tabs" id="adminSectionTabs" aria-label="Admin sections">
       <button class="active" type="button" data-admin-tab="orders"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg><span>Orders</span></button>
+      <button id="adminChatTab" type="button" data-admin-tab="chat"><svg viewBox="0 0 24 24"><path d="M4 5h16v12H9l-5 4V5Z"/><path d="M8 9h8M8 13h5"/></svg><span>Live Chat</span><b class="admin-tab-badge" id="adminChatBadge" hidden>0</b></button>
       <button type="button" data-admin-tab="store"><svg viewBox="0 0 24 24"><path d="M4 8h16v12H4zM3 4h18l-1 4H4L3 4Z"/></svg><span>Event Store</span></button>
       <button type="button" data-admin-tab="redemptions"><svg viewBox="0 0 24 24"><path d="M4 6h16v14H4zM8 3v6M16 3v6M4 10h16"/></svg><span>Redemptions</span></button>
       <button type="button" data-admin-tab="tokens"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/></svg><span>Token settings</span></button>
@@ -752,6 +803,57 @@
     </div>
     </div>
 
+
+    <div class="admin-tab-panel" id="adminPanelChat" data-admin-panel="chat">
+      <div class="support-admin-shell">
+        <aside class="support-admin-sidebar">
+          <div class="admin-panel-head"><div><small>SUPPORT INBOX</small><h3>Live conversations</h3></div><button class="dashboard-refresh" id="refreshAdminChat" type="button">Refresh</button></div>
+          <div class="support-admin-filters">
+            <input id="adminChatSearch" type="search" placeholder="Search customer, Roblox, Discord or order">
+            <select id="adminChatFilter"><option value="all">All conversations</option><option value="unread">Unread</option><option value="open">Open</option><option value="closed">Closed</option><option value="archived">Archived</option><option value="blocked">Blocked</option></select>
+          </div>
+          <div class="support-admin-list" id="adminChatList"><div class="dashboard-loading"><i></i><span>Loading conversations…</span></div></div>
+        </aside>
+        <main class="support-admin-main">
+          <section class="support-presence-card">
+            <div><small>PUBLIC CHAT STATUS</small><strong>Control what customers see</strong></div>
+            <label><span>Status</span><select id="adminSupportStatus"><option value="online">Online</option><option value="away">Away</option><option value="offline">Offline</option></select></label>
+            <label><span>Display name</span><input id="adminSupportDisplayName" maxlength="60" value="Zone6ix Support"></label>
+            <label class="wide"><span>Reply message</span><input id="adminSupportReplyText" maxlength="120" placeholder="Usually replies within a few hours"></label>
+            <button class="dashboard-primary compact" id="saveSupportSettings" type="button">Publish status</button>
+            <small id="supportSettingsMessage"></small>
+          </section>
+          <section class="support-admin-empty" id="adminChatEmpty"><svg viewBox="0 0 64 64"><path d="M9 12h46v34H26L13 56V46H9V12Z"/><path d="M19 25h26M19 34h17"/></svg><strong>Select a conversation</strong><span>Messages and customer information will appear here.</span></section>
+          <section class="support-admin-conversation" id="adminChatConversation" hidden>
+            <header class="support-admin-conversation-head" id="adminChatConversationHead"></header>
+            <div class="support-admin-grid">
+              <div class="support-admin-thread">
+                <div class="support-message-list admin" id="adminChatMessages"></div>
+                <div class="support-typing" id="supportCustomerTyping" hidden><i></i><i></i><i></i><span>Customer is typing</span></div>
+                <div class="support-image-preview" id="adminSupportImagePreview" hidden></div>
+                <form class="support-compose admin" id="adminSupportCompose">
+                  <label class="support-attach"><input id="adminSupportImageInput" type="file" accept="image/jpeg,image/png,image/webp"><svg viewBox="0 0 24 24"><path d="m8 12 5-5a4 4 0 0 1 6 6l-7 7a6 6 0 0 1-9-9l8-8"/></svg></label>
+                  <textarea id="adminSupportMessage" maxlength="2500" rows="2" placeholder="Reply as Zone6ix Support…"></textarea>
+                  <button type="submit" aria-label="Send reply"><svg viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2-7-8-3Z"/><path d="m11 14 4-4"/></svg></button>
+                </form>
+                <div class="support-quick-replies" id="supportQuickReplies"><button type="button">Thanks for messaging — I’m checking this now.</button><button type="button">Can you send a screenshot or reference image?</button><button type="button">I’ve linked this chat to your order.</button><button type="button">Your order update has been saved.</button></div>
+                <small id="adminSupportComposeMessage"></small>
+              </div>
+              <aside class="support-admin-details">
+                <div id="adminChatCustomerDetails"></div>
+                <label><span>Linked order</span><select id="adminChatOrderSelect"><option value="">No linked order</option></select></label>
+                <label><span>Internal admin note</span><textarea id="adminChatInternalNote" maxlength="5000" placeholder="Customers cannot see this note."></textarea></label>
+                <label><span>Conversation status</span><select id="adminChatStatus"><option value="open">Open</option><option value="closed">Closed</option><option value="archived">Archived</option></select></label>
+                <label class="admin-toggle compact"><input id="adminChatBlocked" type="checkbox"><span></span><div><strong>Block messages</strong><small>Customer keeps history but cannot send.</small></div></label>
+                <button class="dashboard-primary" id="saveAdminConversation" type="button">Save conversation</button>
+                <small id="adminConversationMessage"></small>
+              </aside>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
     <div class="admin-tab-panel" id="adminPanelStore" data-admin-panel="store">
       <div class="store-admin-layout">
         <section class="store-admin-list-panel">
@@ -783,13 +885,11 @@
               <label><span>Site name</span><input id="siteSettingName" maxlength="60" required></label>
               <label><span>Studio label</span><input id="siteSettingStudio" maxlength="40" required></label>
               <label><span>Order status text</span><input id="siteSettingStatus" maxlength="60" required></label>
-              <label><span>Contact email</span><input id="siteSettingEmail" type="email" maxlength="254" required></label>
+              <label><span>Public contact</span><input id="siteSettingContact" maxlength="100" value="Discord: Ykzues" required></label>
               <label><span>Hero line 1</span><input id="siteSettingHero1" maxlength="60" required></label>
               <label><span>Hero line 2</span><input id="siteSettingHero2" maxlength="60" required></label>
               <label><span>Hero line 3</span><input id="siteSettingHero3" maxlength="60" required></label>
               <label><span>Announcement</span><input id="siteSettingAnnouncement" maxlength="180"></label>
-              <label><span>Primary accent</span><input id="siteSettingAccent1" type="color"></label>
-              <label><span>Secondary accent</span><input id="siteSettingAccent2" type="color"></label>
               <label><span>Primary button</span><input id="siteSettingPrimaryCta" maxlength="40" required></label>
               <label><span>Secondary button</span><input id="siteSettingSecondaryCta" maxlength="40" required></label>
             </div>
@@ -813,6 +913,38 @@
                 <label class="wide"><span>Process description</span><textarea id="siteSettingProcessLead" maxlength="500" required></textarea></label>
                 <label class="wide"><span>Order description</span><textarea id="siteSettingOrderLead" maxlength="500" required></textarea></label>
               </div>
+            </details>
+
+            <details class="theme-studio-details" open>
+              <summary>Theme Studio — colours and seasonal effects</summary>
+              <div class="theme-preset-row" id="themePresetRow">
+                <button type="button" data-theme-preset="zone6ix">Zone6ix</button><button type="button" data-theme-preset="halloween">Halloween</button><button type="button" data-theme-preset="christmas">Christmas</button><button type="button" data-theme-preset="valentine">Valentine</button><button type="button" data-theme-preset="summer">Summer</button><button type="button" data-theme-preset="blackout">Blackout</button>
+              </div>
+              <input type="hidden" id="siteThemePreset" value="zone6ix">
+              <div class="theme-colour-grid">
+                <label><span>Main accent</span><input id="siteSettingAccent1" type="color"></label>
+                <label><span>Second accent</span><input id="siteSettingAccent2" type="color"></label>
+                <label><span>Page background</span><input id="siteThemeBackground" type="color"></label>
+                <label><span>Second background</span><input id="siteThemeBackgroundAlt" type="color"></label>
+                <label><span>Cards / panels</span><input id="siteThemeSurface" type="color"></label>
+                <label><span>Raised panels</span><input id="siteThemeSurfaceAlt" type="color"></label>
+                <label><span>Navigation</span><input id="siteThemeNav" type="color"></label>
+                <label><span>Main text</span><input id="siteThemeText" type="color"></label>
+                <label><span>Muted text</span><input id="siteThemeMuted" type="color"></label>
+                <label><span>Borders</span><input id="siteThemeBorder" type="color"></label>
+                <label><span>Glow</span><input id="siteThemeGlow" type="color"></label>
+                <label><span>Success</span><input id="siteThemeSuccess" type="color"></label>
+                <label><span>Warning</span><input id="siteThemeWarning" type="color"></label>
+                <label><span>Error</span><input id="siteThemeDanger" type="color"></label>
+              </div>
+              <div class="seasonal-settings-grid">
+                <label class="admin-toggle"><input id="siteSeasonalEnabled" type="checkbox"><span></span><div><strong>Seasonal decorations</strong><small>Show snow, lights, bats or fog across the live site.</small></div></label>
+                <label><span>Effect</span><select id="siteSeasonalEffect"><option value="none">None</option><option value="halloween">Halloween</option><option value="christmas">Christmas</option></select></label>
+                <label><span>Intensity</span><select id="siteSeasonalIntensity"><option value="1">Low</option><option value="2">Medium</option><option value="3">High</option></select></label>
+                <label><span>Start date (optional)</span><input id="siteSeasonalStart" type="date"></label>
+                <label><span>End date (optional)</span><input id="siteSeasonalEnd" type="date"></label>
+              </div>
+              <p class="manager-help">Preview changes instantly on this page. Press Publish site changes to update every visitor. Scheduled decorations only appear between the dates you choose.</p>
             </details>
             <label class="admin-toggle"><input id="siteSettingOpen" type="checkbox"><span></span><div><strong>Custom orders open</strong><small>Controls the live status shown publicly.</small></div></label>
             <div class="admin-save-row"><button class="dashboard-primary" type="submit">Publish site changes</button><span id="siteSettingsMessage"></span></div>
@@ -874,7 +1006,7 @@
           </div>
           <form id="adminAccessForm" class="admin-access-form">
             <label><span>Google account email</span><input id="newAdminEmail" type="email" maxlength="254" autocomplete="off" placeholder="admin@example.com" required></label>
-            <label><span>Access role</span><select id="newAdminRole"><option value="manager">Manager — almost everything</option><option value="orders">Orders admin</option><option value="store">Store admin</option><option value="support">Support — view only</option></select></label>
+            <label><span>Access role</span><select id="newAdminRole"><option value="manager">Manager — almost everything</option><option value="orders">Orders admin</option><option value="store">Store admin</option><option value="support">Support — live chat + view orders</option></select></label>
             <button class="dashboard-primary" id="addAdminButton" type="submit">Give admin access</button>
           </form>
           <div class="admin-access-warning">
@@ -897,10 +1029,12 @@
     </div>
   </section>
 
-  <script src="language.js?v=session-scroll-fix-1"></script>
-  <script type="module" src="account.js?v=session-scroll-fix-1"></script>
-  <script type="module" src="tokens-store.js?v=session-scroll-fix-1"></script>
-  <script type="module" src="site-manager.js?v=session-scroll-fix-1"></script>
-  <script src="script.js?v=robux-request-fix-1"></script>
+  <script src="display-utils.js?v=live-chat-theme-studio-1"></script>
+  <script src="language.js?v=live-chat-theme-studio-1"></script>
+  <script type="module" src="account.js?v=live-chat-theme-studio-1"></script>
+  <script type="module" src="tokens-store.js?v=live-chat-theme-studio-1"></script>
+  <script type="module" src="site-manager.js?v=live-chat-theme-studio-1"></script>
+  <script type="module" src="chat.js?v=live-chat-theme-studio-1"></script>
+  <script src="script.js?v=live-chat-theme-studio-1"></script>
 </body>
 </html>

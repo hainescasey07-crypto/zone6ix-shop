@@ -16,7 +16,8 @@ export async function onRequestGet({ request, env }) {
       getSiteSettings(env.DB),
       getShopProducts(env.DB, { includeHidden: true })
     ]);
-    return json({ settings, products, role: admin.adminRole });
+    const { contactEmail: _privateContactEmail, ...visibleSettings } = settings;
+    return json({ settings: visibleSettings, products, role: admin.adminRole });
   } catch (error) {
     return errorResponse(error);
   }
@@ -31,7 +32,8 @@ export async function onRequestPatch({ request, env }) {
       await logAdminAction(env.DB, admin, "site_settings_updated", "site", "main", {
         fields: Object.keys(body.settings || {})
       });
-      return json({ settings });
+      const { contactEmail: _privateContactEmail, ...visibleSettings } = settings;
+      return json({ settings: visibleSettings });
     }
     if (body.action === "saveProduct") {
       const product = await saveShopProduct(env.DB, body.product || {}, admin.email);

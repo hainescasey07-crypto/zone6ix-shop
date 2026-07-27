@@ -8,7 +8,8 @@ export async function onRequestGet({ env }) {
       getSiteSettings(env.DB),
       getShopProducts(env.DB)
     ]);
-    return json({ settings, products });
+    const { contactEmail: _privateContactEmail, ...publicSettings } = settings;
+    return json({ settings: publicSettings, products });
   } catch (error) {
     return errorResponse(error);
   }

@@ -13,6 +13,7 @@ import {
 
 const tr = value => window.zone6ixI18n?.t(value) ?? String(value ?? "");
 const activeLocale = () => window.zone6ixI18n?.locale() ?? "en-GB";
+const displayIdentity = value => window.zone6ixDisplayIdentity?.(value, "Owner") ?? String(value ?? "");
 
 const firebaseConfig = {
   apiKey: "AIzaSyApYiotTOTsFFFL2H6lsxeNeEC5CjMuvXo",
@@ -223,7 +224,7 @@ function prefillOrderForm() {
     return;
   }
 
-  if (emailInput) emailInput.value = currentUser.email || "";
+  if (emailInput) emailInput.value = displayIdentity(currentUser.email || "");
   if (robloxInput && !robloxInput.value) robloxInput.value = accountProfile?.robloxUsername || "";
   if (discordInput && !discordInput.value) discordInput.value = accountProfile?.discordUsername || "";
   if (gangInput && !gangInput.value) gangInput.value = accountProfile?.gangName || "";
@@ -261,7 +262,7 @@ function updateAccountUi() {
       ? tr("Admin account")
       : tr("My Zone6ix");
   elements.accountMenuName.textContent = name;
-  elements.accountMenuEmail.textContent = currentUser.email || "";
+  elements.accountMenuEmail.textContent = displayIdentity(currentUser.email || "");
   elements.myOrdersButton.hidden = false;
   elements.adminButton.hidden = !adminAllowed;
   elements.signOutButton.hidden = false;
@@ -292,7 +293,7 @@ async function syncAccount() {
     ownerAllowed = currentUser.email?.toLowerCase() === "hainescasey07@gmail.com";
     adminAllowed = ownerAllowed;
     adminRole = ownerAllowed ? "owner" : null;
-    adminPermissions = ownerAllowed ? { viewOrders: true, manageOrders: true, deleteOrders: true, manageStore: true, manageRedemptions: true, manageTokens: true, viewCustomers: true, manageCustomers: true, manageSite: true, exportData: true, viewAudit: true, manageAdmins: true } : {};
+    adminPermissions = ownerAllowed ? { viewOrders: true, manageOrders: true, deleteOrders: true, manageStore: true, manageRedemptions: true, manageTokens: true, viewCustomers: true, manageCustomers: true, manageSite: true, viewChat: true, manageChat: true, exportData: true, viewAudit: true, manageAdmins: true } : {};
     updateAccountUi();
   }
 }
@@ -403,7 +404,7 @@ async function openOrdersDashboard() {
   if (!user) return;
   closeAccountMenu();
   elements.profileName.textContent = currentUser.displayName || tr("Zone6ix customer");
-  elements.profileEmail.textContent = currentUser.email || "";
+  elements.profileEmail.textContent = displayIdentity(currentUser.email || "");
   setAvatar(elements.profileAvatar, currentUser);
   elements.profileRobloxUsername.value = accountProfile?.robloxUsername || "";
   elements.profileDiscordUsername.value = accountProfile?.discordUsername || "";
@@ -474,7 +475,7 @@ function renderAdminOrderList() {
   }
   elements.adminOrderList.innerHTML = filtered.map(order => `
     <button class="admin-order-row ${order.id === selectedAdminOrderId ? "selected" : ""}" type="button" data-admin-order-id="${escapeHtml(order.id)}">
-      <span><strong>${escapeHtml(order.order_code)} · ${escapeHtml(order.gang_name)}</strong><small>${escapeHtml(order.roblox_username)} · ${escapeHtml(order.customer_email)}</small></span>
+      <span><strong>${escapeHtml(order.order_code)} · ${escapeHtml(order.gang_name)}</strong><small>${escapeHtml(order.roblox_username)} · ${escapeHtml(displayIdentity(order.customer_email))}</small></span>
       <span><strong>${escapeHtml(statusName(order.order_status, false))}</strong><small>${escapeHtml(statusName(order.payment_status, false))} · ${escapeHtml(formatDate(order.created_at, false))}</small></span>
       <span class="admin-row-total">${escapeHtml(orderTotal(order, false))}</span>
     </button>`).join("");
@@ -502,7 +503,7 @@ function selectAdminOrder(orderId) {
 
     <div class="admin-detail-grid">
       <div class="admin-detail"><span>Customer</span><strong>${escapeHtml(order.customer_name || "Unknown")}</strong></div>
-      <div class="admin-detail"><span>Email</span><strong>${escapeHtml(order.customer_email)}</strong></div>
+      <div class="admin-detail"><span>Email</span><strong>${escapeHtml(displayIdentity(order.customer_email))}</strong></div>
       <div class="admin-detail"><span>Roblox</span><strong>${escapeHtml(order.roblox_username)}</strong></div>
       <div class="admin-detail"><span>Discord</span><strong>${escapeHtml(order.discord_username)}</strong></div>
       <div class="admin-detail"><span>Payment method</span><strong>${escapeHtml(order.payment_method === "robux" ? "Robux" : "Stripe card")}</strong></div>

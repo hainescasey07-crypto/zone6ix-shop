@@ -175,13 +175,108 @@ function safeText(element, value) {
   if (element && value !== undefined && value !== null) element.textContent = String(value);
 }
 
+
+function rgbaFromHex(hex, alpha = 1) {
+  const clean = String(hex || "").replace("#", "");
+  if (!/^[0-9a-f]{6}$/i.test(clean)) return `rgba(255,255,255,${alpha})`;
+  const value = Number.parseInt(clean, 16);
+  const red = (value >> 16) & 255;
+  const green = (value >> 8) & 255;
+  const blue = value & 255;
+  return `rgba(${red},${green},${blue},${alpha})`;
+}
+
+function seasonalWindowIsActive(settings = {}) {
+  if (!settings.seasonalEnabled || !settings.seasonalEffect || settings.seasonalEffect === "none") return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (settings.seasonalStart) {
+    const start = new Date(`${settings.seasonalStart}T00:00:00`);
+    if (!Number.isNaN(start.getTime()) && today < start) return false;
+  }
+  if (settings.seasonalEnd) {
+    const end = new Date(`${settings.seasonalEnd}T23:59:59`);
+    if (!Number.isNaN(end.getTime()) && today > end) return false;
+  }
+  return true;
+}
+
+function applySeasonalEffects(settings = {}) {
+  const container = document.getElementById("seasonalEffects");
+  if (!container) return;
+  const active = seasonalWindowIsActive(settings);
+  const effect = active ? settings.seasonalEffect : "none";
+  const intensity = Math.max(1, Math.min(3, Number(settings.seasonalIntensity) || 2));
+  document.body.dataset.seasonalEffect = effect;
+  document.body.dataset.seasonalIntensity = String(intensity);
+  container.replaceChildren();
+  container.className = `seasonal-effects effect-${effect}`;
+  if (effect === "none") return;
+
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  const count = reduceMotion ? 8 : (effect === "christmas" ? 18 * intensity : 10 * intensity);
+  if (effect === "christmas") {
+    const lights = document.createElement("div");
+    lights.className = "christmas-light-string";
+    for (let index = 0; index < 22; index += 1) {
+      const light = document.createElement("i");
+      light.style.setProperty("--light-index", String(index));
+      lights.appendChild(light);
+    }
+    container.appendChild(lights);
+  }
+  for (let index = 0; index < count; index += 1) {
+    const item = document.createElement("i");
+    item.className = effect === "christmas" ? "season-snow" : (index % 5 === 0 ? "season-pumpkin" : "season-bat");
+    item.style.setProperty("--x", `${(index * 37 + 9) % 100}%`);
+    item.style.setProperty("--delay", `${-((index * 0.71) % 12)}s`);
+    item.style.setProperty("--duration", `${8 + (index % 7)}s`);
+    item.style.setProperty("--scale", String(0.55 + ((index * 13) % 65) / 100));
+    container.appendChild(item);
+  }
+}
+
 function applySiteSettings(settings = {}) {
   window.zone6ixSiteSettings = settings;
   if (settings.siteName) document.title = settings.siteName;
-  document.documentElement.style.setProperty("--blue", settings.accentPrimary || "#4bbcff");
-  document.documentElement.style.setProperty("--blue-strong", settings.accentSecondary || "#1769ff");
-  document.documentElement.style.setProperty("--site-accent", settings.accentPrimary || "#4bbcff");
-  document.documentElement.style.setProperty("--site-accent-secondary", settings.accentSecondary || "#1769ff");
+  const root = document.documentElement;
+  const primary = settings.accentPrimary || "#4bbcff";
+  const secondary = settings.accentSecondary || "#1769ff";
+  const background = settings.themeBackground || "#05070a";
+  const backgroundAlt = settings.themeBackgroundAlt || "#080b10";
+  const surface = settings.themeSurface || "#0d1219";
+  const surfaceAlt = settings.themeSurfaceAlt || "#111821";
+  const nav = settings.themeNav || "#070a0e";
+  const text = settings.themeText || "#f4f8fb";
+  const muted = settings.themeMuted || "#8f9aa7";
+  const border = settings.themeBorder || "#24313d";
+  const glow = settings.themeGlow || primary;
+  root.style.setProperty("--blue", primary);
+  root.style.setProperty("--blue-strong", secondary);
+  root.style.setProperty("--blue-2", primary);
+  root.style.setProperty("--blue-deep", secondary);
+  root.style.setProperty("--site-accent", primary);
+  root.style.setProperty("--site-accent-secondary", secondary);
+  root.style.setProperty("--ink", background);
+  root.style.setProperty("--ink-2", backgroundAlt);
+  root.style.setProperty("--ink-3", surface);
+  root.style.setProperty("--panel", rgbaFromHex(surface, .82));
+  root.style.setProperty("--panel-solid", surface);
+  root.style.setProperty("--surface-alt", surfaceAlt);
+  root.style.setProperty("--nav-background", rgbaFromHex(nav, .9));
+  root.style.setProperty("--text", text);
+  root.style.setProperty("--muted", muted);
+  root.style.setProperty("--muted-2", muted);
+  root.style.setProperty("--line", rgbaFromHex(border, .65));
+  root.style.setProperty("--line-blue", rgbaFromHex(primary, .32));
+  root.style.setProperty("--theme-glow", glow);
+  root.style.setProperty("--green", settings.themeSuccess || "#65e5ae");
+  root.style.setProperty("--warning", settings.themeWarning || "#f2bd5c");
+  root.style.setProperty("--danger", settings.themeDanger || "#ff667a");
+  document.body.dataset.themePreset = settings.themePreset || "custom";
+  const themeMeta = document.getElementById("browserThemeColour");
+  if (themeMeta) themeMeta.setAttribute("content", background);
+  applySeasonalEffects(settings);
   document.querySelectorAll(".brand-copy strong").forEach(element => safeText(element, settings.siteName?.replace(/\s+Customs$/i, "") || "ZONE6IX"));
   document.querySelectorAll(".brand-copy small").forEach(element => safeText(element, settings.studioLabel || "CUSTOM STUDIO"));
   safeText(document.getElementById("siteStatusText"), tr(settings.statusText || "CUSTOM ORDERS OPEN"));
@@ -207,7 +302,10 @@ function applySiteSettings(settings = {}) {
   safeText(document.getElementById("orderLead"), tr(settings.orderLead || ""));
   safeText(document.getElementById("primaryCtaText"), tr(settings.primaryCta || "Explore the studio"));
   safeText(document.getElementById("secondaryCtaText"), tr(settings.secondaryCta || "Build an order"));
-  safeText(document.getElementById("footerDescription"), `Premium custom content for the Zone6ix Roblox experience. Contact: ${settings.contactEmail || "hainescasey07@gmail.com"}`);
+  safeText(document.getElementById("footerDescriptionText"), "Premium custom content for the Zone6ix Roblox experience.");
+  const publicContact = settings.contactDisplay || "Discord: Ykzues";
+  safeText(document.getElementById("footerContactText"), publicContact);
+  window.zone6ixPublicContact = publicContact;
   const footerStatus = document.getElementById("footerStatus");
   if (footerStatus) footerStatus.innerHTML = `<i></i> ${escapeHtml(settings.statusText || "Custom orders open")}`;
   document.getElementById("siteStatusPill")?.classList.toggle("closed", settings.statusOpen === false);
@@ -224,6 +322,8 @@ function applySiteSettings(settings = {}) {
   safeText(document.getElementById("publicRefundText"), settings.refundText || "");
   safeText(document.getElementById("publicTokenRulesText"), settings.tokenRulesText || "");
 }
+
+window.zone6ixApplySiteSettings = applySiteSettings;
 
 function reconcileCart() {
   const ids = Array.isArray(storedCart)
@@ -509,7 +609,7 @@ function buildReview() {
   const rows = [
     [tr("Roblox username"), currentOrderData.robloxUsername],
     [tr("Gang name"), currentOrderData.gangName],
-    [tr("Email"), currentOrderData.customerEmail],
+    [tr("Email"), window.zone6ixDisplayIdentity?.(currentOrderData.customerEmail, "Owner") || currentOrderData.customerEmail],
     [tr("Discord"), currentOrderData.discordUsername],
     [tr("Payment choice"), tr(currentOrderData.paymentMethod)],
     [tr("Products"), cart.map(item => tr(item.name)).join(", ")],
@@ -589,8 +689,10 @@ document.getElementById("orderForm").addEventListener("submit", async event => {
     const authApi = await waitForZone6ixAuth();
     const user = await authApi.requireUser();
     if (!user) return;
-    document.getElementById("customerEmail").value = user.email || "";
+    const emailField = document.getElementById("customerEmail");
+    emailField.value = user.email || "";
     buildReview();
+    emailField.value = window.zone6ixDisplayIdentity?.(user.email || "", "Owner") || user.email || "";
   } catch (error) {
     alert(tr(error.message || "Google sign-in is required to save this order."));
   }
@@ -855,6 +957,33 @@ window.zone6ixRefreshPublicSite = async function zone6ixRefreshPublicSite() {
   activateSpotlights();
 };
 
+async function copyPublicContact() {
+  const display = String(window.zone6ixPublicContact || "Discord: Ykzues").trim();
+  const copyValue = display.includes(":") ? display.slice(display.indexOf(":") + 1).trim() : display;
+  const hint = document.getElementById("footerContactHint");
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(copyValue);
+    } else {
+      const input = document.createElement("textarea");
+      input.value = copyValue;
+      input.setAttribute("readonly", "");
+      input.style.position = "fixed";
+      input.style.opacity = "0";
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      input.remove();
+    }
+    if (hint) hint.textContent = "Copied";
+  } catch {
+    if (hint) hint.textContent = copyValue;
+  }
+  window.setTimeout(() => { if (hint) hint.textContent = "Copy"; }, 2200);
+}
+
+document.getElementById("footerContactButton")?.addEventListener("click", copyPublicContact);
+
 async function initialiseZone6ixShop() {
   await loadSiteConfig();
   renderProducts();
@@ -864,6 +993,29 @@ async function initialiseZone6ixShop() {
   activateSpotlights();
   activateGlobalMotion();
   handleStripeReturn();
+  window.setInterval(async () => {
+    if (document.hidden) return;
+    try {
+      const response = await fetch(`/api/site-config?live=${Date.now()}`, { headers: { Accept: "application/json" }, cache: "no-store" });
+      if (!response.ok) return;
+      const data = await response.json();
+      const previous = JSON.stringify(window.zone6ixSiteConfig || {});
+      const next = JSON.stringify(data || {});
+      if (previous === next) return;
+      if (Array.isArray(data.products) && data.products.length) {
+        products = data.products.map(product => ({ ...product, cash: Number(product.cashPricePence || 0) / 100, robux: Number(product.robuxPrice || 0) }));
+        ROBUX_PRODUCT_IDS = Object.fromEntries(products.map(product => [product.id, Number(product.robuxProductId || 0)]));
+      }
+      window.zone6ixSiteConfig = data;
+      applySiteSettings(data.settings || {});
+      reconcileCart();
+      renderProducts();
+      renderCart();
+      document.dispatchEvent(new CustomEvent("zone6ix-site-config", { detail: data }));
+    } catch (error) {
+      console.debug("Live site refresh skipped:", error?.message || error);
+    }
+  }, 12000);
 }
 
 initialiseZone6ixShop();
