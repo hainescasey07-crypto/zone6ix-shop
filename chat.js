@@ -37,11 +37,13 @@ let customerTypingTimer = null;
 let adminTypingTimer = null;
 let lastCustomerUnread = 0;
 let lastAdminUnread = 0;
+let supportAuthBusy = false;
+let authRunId = 0;
 
 const el = Object.fromEntries([
   "supportChatLauncher", "supportLauncherStatus", "supportChatBadge", "supportMenuButton", "supportMenuBadge",
   "supportChatPanel", "supportMinimise", "supportDisplayName", "supportStatusDot", "supportStatusText", "supportReplyText",
-  "supportChatToolbar", "supportConversationSelect", "supportNewConversation", "supportChatSignin", "supportSignIn",
+  "supportChatToolbar", "supportConversationSelect", "supportNewConversation", "supportChatSignin", "supportSignIn", "supportSignInMessage",
   "supportChatStart", "supportOrderSelect", "supportStartConversation", "supportStartMessage", "supportChatActive",
   "supportConversationMeta", "supportMessageList", "supportAdminTyping", "supportImagePreview", "supportComposeForm",
   "supportImageInput", "supportMessageInput", "supportSendButton", "supportConversationToggle", "supportComposeMessage",
@@ -187,7 +189,17 @@ function renderMessages(container, messages, viewerType) {
   }
   container.innerHTML = messages.map(message => messageMarkup(message, viewerType)).join("");
   if (nearBottom || !container.dataset.rendered) {
-    container.scrollTop = container.scrollHeight;
+    const scrollToLatest = () => {
+      const previousBehavior = container.style.scrollBehavior;
+      container.style.scrollBehavior = "auto";
+      container.scrollTop = container.scrollHeight;
+      container.style.scrollBehavior = previousBehavior;
+    };
+    scrollToLatest();
+    requestAnimationFrame(() => {
+      scrollToLatest();
+      requestAnimationFrame(scrollToLatest);
+    });
     container.dataset.rendered = "1";
   }
 }
@@ -246,26 +258,79 @@ async function customerFetch(conversationId = customerState.conversation?.id || 
   renderCustomer();
 }
 
+async function resolveChatUser({ prompt = false, sync = false } = {}) {
+  if (!authApi) return null;
+  let activeUser = authApi.getUser?.() || user || null;
+  if (!activeUser && prompt) {
+    activeUser = await authApi.requireUser?.();
+    activeUser = activeUser || authApi.getUser?.() || null;
+  }
+  if (activeUser && sync) {
+    try { await authApi.syncAccount?.(); } catch (error) { console.warn("Chat account sync failed:", error); }
+  }
+  user = activeUser || null;
+  permissions = authApi.getPermissions?.() || permissions || {};
+  return user;
+}
+
+async function signInFromSupport() {
+  if (supportAuthBusy) return;
+  supportAuthBusy = true;
+  if (el.supportSignIn) {
+    el.supportSignIn.disabled = true;
+    el.supportSignIn.textContent = "Signing in…";
+  }
+  if (el.supportSignInMessage) el.supportSignInMessage.textContent = "";
+  try {
+    const activeUser = await resolveChatUser({ prompt: true, sync: true });
+    if (!activeUser) throw new Error("Sign-in was not completed. Please try again.");
+    await handleAuth({ user: activeUser, permissions: authApi.getPermissions?.() || {} });
+    await openSupport();
+  } catch (error) {
+    if (el.supportSignInMessage) el.supportSignInMessage.textContent = error.message || "Could not sign in.";
+    renderCustomer();
+  } finally {
+    supportAuthBusy = false;
+    if (el.supportSignIn) {
+      el.supportSignIn.disabled = false;
+      el.supportSignIn.textContent = "Sign in to start";
+    }
+  }
+}
+
 async function openSupport() {
   el.supportChatPanel?.classList.add("open");
   el.supportChatPanel?.setAttribute("aria-hidden", "false");
   el.supportChatLauncher?.setAttribute("aria-expanded", "true");
-  if (!user) {
+  document.body.classList.add("support-chat-open");
+
+  const activeUser = await resolveChatUser();
+  if (!activeUser) {
     renderCustomer();
     return;
   }
+  if (!user || user.uid !== activeUser.uid) user = activeUser;
   const id = customerState.conversation?.id || customerState.conversations[0]?.id || "";
-  await customerFetch(id, { markRead: true, force: true }).catch(error => showToast(error.message));
+  await customerFetch(id, { markRead: true, force: true }).catch(error => {
+    if (el.supportStartMessage) el.supportStartMessage.textContent = error.message;
+    showToast(error.message);
+  });
 }
 
 function closeSupport() {
   el.supportChatPanel?.classList.remove("open");
   el.supportChatPanel?.setAttribute("aria-hidden", "true");
   el.supportChatLauncher?.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("support-chat-open");
 }
 
 async function createCustomerConversation() {
-  if (!authApi || !user) return;
+  if (!authApi) return;
+  const activeUser = await resolveChatUser();
+  if (!activeUser) {
+    await signInFromSupport();
+    if (!user) return;
+  }
   if (el.supportStartConversation) el.supportStartConversation.disabled = true;
   if (el.supportStartMessage) el.supportStartMessage.textContent = "Starting chat…";
   try {
@@ -552,7 +617,7 @@ function bind() {
   el.supportChatLauncher?.addEventListener("click", () => el.supportChatPanel?.classList.contains("open") ? closeSupport() : openSupport());
   el.supportMenuButton?.addEventListener("click", () => { authApi?.closeAccountMenu?.(); openSupport(); });
   el.supportMinimise?.addEventListener("click", closeSupport);
-  el.supportSignIn?.addEventListener("click", () => authApi?.signIn());
+  el.supportSignIn?.addEventListener("click", signInFromSupport);
   el.supportStartConversation?.addEventListener("click", createCustomerConversation);
   el.supportNewConversation?.addEventListener("click", () => { customerState.conversation = null; renderCustomer(); });
   el.supportConversationSelect?.addEventListener("change", () => customerFetch(el.supportConversationSelect.value, { markRead: true, force: true }).catch(error => showToast(error.message)));
@@ -640,15 +705,25 @@ function restartPolling() {
 }
 
 async function handleAuth(detail = {}) {
-  user = detail.user || authApi?.getUser?.() || null;
+  const runId = ++authRunId;
+  const nextUser = Object.prototype.hasOwnProperty.call(detail, "user") ? detail.user : authApi?.getUser?.();
+  user = nextUser || authApi?.getUser?.() || null;
   permissions = detail.permissions || authApi?.getPermissions?.() || {};
   customerState = { ...customerState, conversations: [], conversation: null, messages: [], orders: [], fingerprint: "" };
   adminState = { ...adminState, conversations: [], conversation: null, messages: [], customerOrders: [], fingerprint: "" };
   renderCustomer();
   if (user) {
-    await customerFetch("", { force: true }).catch(error => console.error("Chat load failed:", error));
-    if (customerState.conversations.length) await customerFetch(customerState.conversations[0].id, { force: true }).catch(() => {});
+    try {
+      await customerFetch("", { force: true });
+      if (runId !== authRunId) return;
+      if (customerState.conversations.length) await customerFetch(customerState.conversations[0].id, { force: true });
+      if (el.supportSignInMessage) el.supportSignInMessage.textContent = "";
+    } catch (error) {
+      console.error("Chat load failed:", error);
+      if (el.supportStartMessage) el.supportStartMessage.textContent = error.message || "Could not load chat.";
+    }
   }
+  if (runId !== authRunId) return;
   if (permissions.viewChat) await adminFetch("", { force: true }).catch(() => {});
   restartPolling();
 }
@@ -658,6 +733,7 @@ function initialise() {
   if (!authApi) return false;
   bind();
   authApi.ready.then(() => handleAuth({ user: authApi.getUser(), permissions: authApi.getPermissions() }));
+  document.addEventListener("zone6ix-auth-ready", event => handleAuth(event.detail || {}));
   document.addEventListener("zone6ix-auth-change", event => handleAuth(event.detail || {}));
   renderCustomer();
   return true;

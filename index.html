@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4">
   <link rel="manifest" href="/site.webmanifest?v=4">
-  <link rel="stylesheet" href="styles.css?v=live-chat-theme-studio-1">
+  <link rel="stylesheet" href="styles.css?v=live-chat-avatar-fix-2">
 </head>
 <body>
   <div class="seasonal-effects" id="seasonalEffects" aria-hidden="true"></div>
@@ -481,13 +481,42 @@
           <div class="form-grid gang-link-grid">
             <label>
               <span>Gang shirt link <small>optional</small></span>
-              <input type="url" id="gangShirtLink" name="gang_shirt_link" placeholder="Roblox shirt URL">
+              <input type="url" id="gangShirtLink" name="gang_shirt_link" placeholder="https://www.roblox.com/catalog/…">
             </label>
             <label>
               <span>Gang pants link <small>optional</small></span>
-              <input type="url" id="gangPantsLink" name="gang_pants_link" placeholder="Roblox pants URL">
+              <input type="url" id="gangPantsLink" name="gang_pants_link" placeholder="https://www.roblox.com/catalog/…">
             </label>
           </div>
+
+          <section class="roblox-look-preview" id="robloxLookPreview" aria-live="polite">
+            <header>
+              <div><small>LIVE ROBLOX CHECK</small><strong>Player and clothing preview</strong></div>
+              <button type="button" id="refreshRobloxPreview">Refresh preview</button>
+            </header>
+            <div class="roblox-preview-placeholder" id="robloxPreviewPlaceholder">
+              <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 8h28l10 12-7 36H15L8 20 18 8Z"/><path d="M23 8v13h18V8M22 31h20M27 42h10"/></svg>
+              <div><strong>Add your Roblox username</strong><span>Your current avatar will appear here. Paste shirt and pants links to check the exact clothing assets beside it.</span></div>
+            </div>
+            <div class="roblox-preview-loading" id="robloxPreviewLoading" hidden><i></i><span>Loading Roblox preview…</span></div>
+            <div class="roblox-preview-error" id="robloxPreviewError" hidden></div>
+            <div class="roblox-preview-grid" id="robloxPreviewGrid" hidden>
+              <article class="roblox-avatar-card">
+                <div class="roblox-preview-image"><img id="robloxAvatarImage" alt="Roblox avatar preview"></div>
+                <div><small>CURRENT AVATAR</small><strong id="robloxAvatarName">Roblox player</strong><span id="robloxAvatarHandle"></span><a id="robloxProfileLink" target="_blank" rel="noopener">Open profile</a></div>
+              </article>
+              <article class="roblox-clothing-card" id="robloxShirtCard">
+                <div class="roblox-preview-image clothing"><img id="robloxShirtImage" alt="Roblox shirt preview"></div>
+                <div><small>SHIRT LINK</small><strong id="robloxShirtStatus">Not added</strong><a id="robloxShirtOpen" target="_blank" rel="noopener" hidden>Open shirt</a></div>
+              </article>
+              <article class="roblox-clothing-card" id="robloxPantsCard">
+                <div class="roblox-preview-image clothing"><img id="robloxPantsImage" alt="Roblox pants preview"></div>
+                <div><small>PANTS LINK</small><strong id="robloxPantsStatus">Not added</strong><a id="robloxPantsOpen" target="_blank" rel="noopener" hidden>Open pants</a></div>
+              </article>
+            </div>
+            <p class="roblox-preview-note">The preview uses Roblox’s live avatar and asset thumbnails so you can confirm the correct username, shirt and pants before ordering.</p>
+          </section>
+
           <label class="full-field">
             <span>Gang group link <small>optional</small></span>
             <input type="url" id="gangGroupLink" name="gang_group_link" placeholder="Roblox group URL">
@@ -568,6 +597,7 @@
       <strong>Talk directly to Zone6ix</strong>
       <p>Sign in with Google so your messages, replies and order details stay saved.</p>
       <button class="dashboard-primary" id="supportSignIn" type="button">Sign in to start</button>
+      <small class="support-signin-message" id="supportSignInMessage"></small>
     </div>
     <div class="support-chat-start" id="supportChatStart" hidden>
       <div class="support-empty-icon"><svg viewBox="0 0 64 64"><path d="M9 12h46v34H26L13 56V46H9V12Z"/><path d="M19 25h26M19 34h17"/></svg></div>
@@ -1029,12 +1059,13 @@
     </div>
   </section>
 
-  <script src="display-utils.js?v=live-chat-theme-studio-1"></script>
-  <script src="language.js?v=live-chat-theme-studio-1"></script>
-  <script type="module" src="account.js?v=live-chat-theme-studio-1"></script>
-  <script type="module" src="tokens-store.js?v=live-chat-theme-studio-1"></script>
-  <script type="module" src="site-manager.js?v=live-chat-theme-studio-1"></script>
-  <script type="module" src="chat.js?v=live-chat-theme-studio-1"></script>
-  <script src="script.js?v=live-chat-theme-studio-1"></script>
+  <script src="display-utils.js?v=live-chat-avatar-fix-2"></script>
+  <script src="language.js?v=live-chat-avatar-fix-2"></script>
+  <script type="module" src="account.js?v=live-chat-avatar-fix-2"></script>
+  <script type="module" src="tokens-store.js?v=live-chat-avatar-fix-2"></script>
+  <script type="module" src="site-manager.js?v=live-chat-avatar-fix-2"></script>
+  <script type="module" src="chat.js?v=live-chat-avatar-fix-2"></script>
+  <script type="module" src="roblox-preview.js?v=live-chat-avatar-fix-2"></script>
+  <script src="script.js?v=live-chat-avatar-fix-2"></script>
 </body>
 </html>
