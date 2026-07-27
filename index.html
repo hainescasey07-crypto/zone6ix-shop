@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4">
   <link rel="manifest" href="/site.webmanifest?v=4">
-  <link rel="stylesheet" href="styles.css?v=live-chat-avatar-fix-2">
+  <link rel="stylesheet" href="styles.css?v=chat-permanent-close-delete-3">
 </head>
 <body>
   <div class="seasonal-effects" id="seasonalEffects" aria-hidden="true"></div>
@@ -617,7 +617,11 @@
         <textarea id="supportMessageInput" maxlength="2500" rows="1" placeholder="Write a message…"></textarea>
         <button type="submit" id="supportSendButton" aria-label="Send message"><svg viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2-7-8-3Z"/><path d="m11 14 4-4"/></svg></button>
       </form>
-      <div class="support-chat-actions"><button type="button" id="supportConversationToggle">Close conversation</button><span id="supportComposeMessage"></span></div>
+      <div class="support-chat-actions">
+        <button type="button" id="supportConversationToggle">Close permanently</button>
+        <button class="support-delete-action" type="button" id="supportConversationDelete">Delete for both sides</button>
+        <span id="supportComposeMessage"></span>
+      </div>
     </div>
   </section>
 
@@ -864,7 +868,7 @@
                 <form class="support-compose admin" id="adminSupportCompose">
                   <label class="support-attach"><input id="adminSupportImageInput" type="file" accept="image/jpeg,image/png,image/webp"><svg viewBox="0 0 24 24"><path d="m8 12 5-5a4 4 0 0 1 6 6l-7 7a6 6 0 0 1-9-9l8-8"/></svg></label>
                   <textarea id="adminSupportMessage" maxlength="2500" rows="2" placeholder="Reply as Zone6ix Support…"></textarea>
-                  <button type="submit" aria-label="Send reply"><svg viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2-7-8-3Z"/><path d="m11 14 4-4"/></svg></button>
+                  <button type="submit" id="adminSupportSendButton" aria-label="Send reply"><svg viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2-7-8-3Z"/><path d="m11 14 4-4"/></svg></button>
                 </form>
                 <div class="support-quick-replies" id="supportQuickReplies"><button type="button">Thanks for messaging — I’m checking this now.</button><button type="button">Can you send a screenshot or reference image?</button><button type="button">I’ve linked this chat to your order.</button><button type="button">Your order update has been saved.</button></div>
                 <small id="adminSupportComposeMessage"></small>
@@ -873,9 +877,10 @@
                 <div id="adminChatCustomerDetails"></div>
                 <label><span>Linked order</span><select id="adminChatOrderSelect"><option value="">No linked order</option></select></label>
                 <label><span>Internal admin note</span><textarea id="adminChatInternalNote" maxlength="5000" placeholder="Customers cannot see this note."></textarea></label>
-                <label><span>Conversation status</span><select id="adminChatStatus"><option value="open">Open</option><option value="closed">Closed</option><option value="archived">Archived</option></select></label>
+                <label><span>Conversation status</span><select id="adminChatStatus"><option value="open">Open</option><option value="closed">Closed permanently</option><option value="archived">Archived</option></select></label>
                 <label class="admin-toggle compact"><input id="adminChatBlocked" type="checkbox"><span></span><div><strong>Block messages</strong><small>Customer keeps history but cannot send.</small></div></label>
                 <button class="dashboard-primary" id="saveAdminConversation" type="button">Save conversation</button>
+                <button class="dashboard-delete" id="deleteAdminConversation" type="button">Delete conversation for both sides</button>
                 <small id="adminConversationMessage"></small>
               </aside>
             </div>
@@ -1059,13 +1064,13 @@
     </div>
   </section>
 
-  <script src="display-utils.js?v=live-chat-avatar-fix-2"></script>
-  <script src="language.js?v=live-chat-avatar-fix-2"></script>
-  <script type="module" src="account.js?v=live-chat-avatar-fix-2"></script>
-  <script type="module" src="tokens-store.js?v=live-chat-avatar-fix-2"></script>
-  <script type="module" src="site-manager.js?v=live-chat-avatar-fix-2"></script>
-  <script type="module" src="chat.js?v=live-chat-avatar-fix-2"></script>
-  <script type="module" src="roblox-preview.js?v=live-chat-avatar-fix-2"></script>
-  <script src="script.js?v=live-chat-avatar-fix-2"></script>
+  <script src="display-utils.js?v=chat-permanent-close-delete-3"></script>
+  <script src="language.js?v=chat-permanent-close-delete-3"></script>
+  <script type="module" src="account.js?v=chat-permanent-close-delete-3"></script>
+  <script type="module" src="tokens-store.js?v=chat-permanent-close-delete-3"></script>
+  <script type="module" src="site-manager.js?v=chat-permanent-close-delete-3"></script>
+  <script type="module" src="chat.js?v=chat-permanent-close-delete-3"></script>
+  <script type="module" src="roblox-preview.js?v=chat-permanent-close-delete-3"></script>
+  <script src="script.js?v=chat-permanent-close-delete-3"></script>
 </body>
 </html>

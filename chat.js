@@ -46,13 +46,13 @@ const el = Object.fromEntries([
   "supportChatToolbar", "supportConversationSelect", "supportNewConversation", "supportChatSignin", "supportSignIn", "supportSignInMessage",
   "supportChatStart", "supportOrderSelect", "supportStartConversation", "supportStartMessage", "supportChatActive",
   "supportConversationMeta", "supportMessageList", "supportAdminTyping", "supportImagePreview", "supportComposeForm",
-  "supportImageInput", "supportMessageInput", "supportSendButton", "supportConversationToggle", "supportComposeMessage",
+  "supportImageInput", "supportMessageInput", "supportSendButton", "supportConversationToggle", "supportConversationDelete", "supportComposeMessage",
   "adminChatTab", "adminChatBadge", "refreshAdminChat", "adminChatSearch", "adminChatFilter", "adminChatList",
   "adminSupportStatus", "adminSupportDisplayName", "adminSupportReplyText", "saveSupportSettings", "supportSettingsMessage",
   "adminChatEmpty", "adminChatConversation", "adminChatConversationHead", "adminChatMessages", "supportCustomerTyping",
   "adminSupportImagePreview", "adminSupportCompose", "adminSupportImageInput", "adminSupportMessage", "supportQuickReplies",
-  "adminSupportComposeMessage", "adminChatCustomerDetails", "adminChatOrderSelect", "adminChatInternalNote",
-  "adminChatStatus", "adminChatBlocked", "saveAdminConversation", "adminConversationMessage"
+  "adminSupportComposeMessage", "adminSupportSendButton", "adminChatCustomerDetails", "adminChatOrderSelect", "adminChatInternalNote",
+  "adminChatStatus", "adminChatBlocked", "saveAdminConversation", "deleteAdminConversation", "adminConversationMessage"
 ].map(id => [id, document.getElementById(id)]));
 
 function parseDate(value) {
@@ -229,11 +229,14 @@ function renderCustomer() {
   if (el.supportImageInput) el.supportImageInput.disabled = disabled;
   if (el.supportSendButton) el.supportSendButton.disabled = disabled;
   if (el.supportConversationToggle) {
-    el.supportConversationToggle.hidden = conversation.status === "archived" || conversation.blocked;
-    el.supportConversationToggle.textContent = conversation.status === "closed" ? "Reopen conversation" : "Close conversation";
+    el.supportConversationToggle.hidden = conversation.status !== "open" || conversation.blocked;
+    el.supportConversationToggle.textContent = "Close permanently";
+  }
+  if (el.supportConversationDelete) {
+    el.supportConversationDelete.hidden = conversation.blocked;
   }
   if (el.supportComposeMessage) {
-    el.supportComposeMessage.textContent = conversation.blocked ? "Messaging has been blocked for this conversation." : conversation.status === "archived" ? "This conversation is archived." : conversation.status === "closed" ? "Reopen the conversation to send another message." : "";
+    el.supportComposeMessage.textContent = conversation.blocked ? "Messaging has been blocked for this conversation." : conversation.status === "archived" ? "This conversation is archived." : conversation.status === "closed" ? "This conversation is permanently closed and cannot be reopened." : "";
   }
 }
 
@@ -417,15 +420,42 @@ async function sendCustomerMessage(event) {
   }
 }
 
-async function toggleCustomerConversation() {
+async function closeCustomerConversation() {
   const conversation = customerState.conversation;
-  if (!conversation) return;
-  const action = conversation.status === "closed" ? "reopenConversation" : "closeConversation";
+  if (!conversation || conversation.status !== "open") return;
+  const confirmed = window.confirm("Close this conversation permanently? You will not be able to reopen it, but you can start a new chat.");
+  if (!confirmed) return;
   try {
-    await authApi.apiFetch("/api/chat", { method: "POST", body: JSON.stringify({ action, conversationId: conversation.id }) });
+    await authApi.apiFetch("/api/chat", { method: "POST", body: JSON.stringify({ action: "closeConversation", conversationId: conversation.id }) });
     await customerFetch(conversation.id, { force: true });
   } catch (error) {
     showToast(error.message);
+  }
+}
+
+async function deleteCustomerConversation() {
+  const conversation = customerState.conversation;
+  if (!conversation) return;
+  const confirmed = window.confirm("Delete this entire conversation for both you and Zone6ix Support? All messages and images in it will be permanently removed.");
+  if (!confirmed) return;
+  if (el.supportConversationDelete) el.supportConversationDelete.disabled = true;
+  try {
+    await authApi.apiFetch("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({ action: "deleteConversation", conversationId: conversation.id })
+    });
+    customerState.conversation = null;
+    customerState.messages = [];
+    customerState.image = null;
+    customerState.fingerprint = "";
+    await customerFetch("", { force: true });
+    const nextId = customerState.conversations[0]?.id || "";
+    if (nextId) await customerFetch(nextId, { markRead: true, force: true });
+    showToast("Conversation deleted for both sides.");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    if (el.supportConversationDelete) el.supportConversationDelete.disabled = false;
   }
 }
 
@@ -503,7 +533,15 @@ function renderAdminConversation() {
   if (el.adminChatStatus) el.adminChatStatus.value = conversation.status || "open";
   if (el.adminChatBlocked) el.adminChatBlocked.checked = Boolean(conversation.blocked);
   const canManage = Boolean(permissions.manageChat);
-  [el.adminSupportMessage, el.adminSupportImageInput, el.saveAdminConversation].forEach(node => { if (node) node.disabled = !canManage; });
+  const canReply = canManage && !conversation.blocked && conversation.status === "open";
+  [el.adminSupportMessage, el.adminSupportImageInput, el.adminSupportSendButton].forEach(node => { if (node) node.disabled = !canReply; });
+  el.supportQuickReplies?.querySelectorAll("button").forEach(button => { button.disabled = !canReply; });
+  if (el.saveAdminConversation) el.saveAdminConversation.disabled = !canManage;
+  if (el.deleteAdminConversation) el.deleteAdminConversation.disabled = !canManage;
+  if (el.adminChatStatus) {
+    el.adminChatStatus.disabled = !canManage || conversation.status === "closed";
+    el.adminChatStatus.title = conversation.status === "closed" ? "Closed conversations cannot be reopened." : "";
+  }
 }
 
 async function adminFetch(conversationId = adminState.conversation?.id || "", { markRead = false, force = false } = {}) {
@@ -584,12 +622,20 @@ async function saveAdminConversation() {
   if (el.saveAdminConversation) el.saveAdminConversation.disabled = true;
   if (el.adminConversationMessage) el.adminConversationMessage.textContent = "Saving…";
   try {
+    const nextStatus = el.adminChatStatus?.value || "open";
+    if (conversation.status !== "closed" && nextStatus === "closed") {
+      const confirmed = window.confirm("Close this conversation permanently? Neither side will be able to reopen or reply to it.");
+      if (!confirmed) {
+        if (el.adminConversationMessage) el.adminConversationMessage.textContent = "Close cancelled.";
+        return;
+      }
+    }
     await authApi.apiFetch("/api/admin-chat", {
       method: "POST",
       body: JSON.stringify({
         action: "updateConversation",
         conversationId: conversation.id,
-        status: el.adminChatStatus?.value || "open",
+        status: nextStatus,
         blocked: Boolean(el.adminChatBlocked?.checked),
         internalNote: el.adminChatInternalNote?.value.trim() || "",
         orderId: el.adminChatOrderSelect?.value || ""
@@ -601,6 +647,36 @@ async function saveAdminConversation() {
     if (el.adminConversationMessage) el.adminConversationMessage.textContent = error.message;
   } finally {
     if (el.saveAdminConversation) el.saveAdminConversation.disabled = false;
+  }
+}
+
+async function deleteAdminChatConversation() {
+  const conversation = adminState.conversation;
+  if (!conversation || !permissions.manageChat) return;
+  const label = conversation.customerName || displayIdentity(conversation.customerEmail) || "this customer";
+  const confirmed = window.confirm(`Delete the entire conversation with ${label} for both sides? All messages and images will be permanently removed.`);
+  if (!confirmed) return;
+  if (el.deleteAdminConversation) el.deleteAdminConversation.disabled = true;
+  if (el.adminConversationMessage) el.adminConversationMessage.textContent = "Deleting…";
+  try {
+    await authApi.apiFetch("/api/admin-chat", {
+      method: "POST",
+      body: JSON.stringify({ action: "deleteConversation", conversationId: conversation.id })
+    });
+    adminState.conversation = null;
+    adminState.messages = [];
+    adminState.customerOrders = [];
+    adminState.image = null;
+    adminState.fingerprint = "";
+    await adminFetch("", { force: true });
+    const nextId = adminState.conversations[0]?.id || "";
+    if (nextId) await adminFetch(nextId, { markRead: true, force: true });
+    showToast("Conversation deleted for both sides.");
+  } catch (error) {
+    if (el.adminConversationMessage) el.adminConversationMessage.textContent = error.message;
+    showToast(error.message);
+  } finally {
+    if (el.deleteAdminConversation) el.deleteAdminConversation.disabled = false;
   }
 }
 
@@ -622,7 +698,8 @@ function bind() {
   el.supportNewConversation?.addEventListener("click", () => { customerState.conversation = null; renderCustomer(); });
   el.supportConversationSelect?.addEventListener("change", () => customerFetch(el.supportConversationSelect.value, { markRead: true, force: true }).catch(error => showToast(error.message)));
   el.supportComposeForm?.addEventListener("submit", sendCustomerMessage);
-  el.supportConversationToggle?.addEventListener("click", toggleCustomerConversation);
+  el.supportConversationToggle?.addEventListener("click", closeCustomerConversation);
+  el.supportConversationDelete?.addEventListener("click", deleteCustomerConversation);
   el.supportMessageInput?.addEventListener("input", customerTyping);
   el.supportMessageInput?.addEventListener("keydown", event => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -670,6 +747,7 @@ function bind() {
     }
   });
   el.saveAdminConversation?.addEventListener("click", saveAdminConversation);
+  el.deleteAdminConversation?.addEventListener("click", deleteAdminChatConversation);
   el.supportQuickReplies?.querySelectorAll("button").forEach(button => button.addEventListener("click", () => {
     if (!el.adminSupportMessage) return;
     el.adminSupportMessage.value = button.textContent.trim();

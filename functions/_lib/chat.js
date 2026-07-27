@@ -305,6 +305,15 @@ export async function assertCustomerConversation(db, user, conversationId) {
   return conversation;
 }
 
+export async function deleteConversation(db, conversationId) {
+  await ensureChatSchema(db);
+  await db.batch([
+    db.prepare("DELETE FROM support_typing WHERE conversation_id = ?").bind(conversationId),
+    db.prepare("DELETE FROM support_messages WHERE conversation_id = ?").bind(conversationId),
+    db.prepare("DELETE FROM support_conversations WHERE id = ?").bind(conversationId)
+  ]);
+}
+
 export async function enforceMessageRateLimit(db, conversationId, senderType) {
   const row = await db.prepare(`
     SELECT COUNT(*) AS total FROM support_messages
@@ -344,7 +353,7 @@ export async function insertMessage(db, conversation, sender, senderType, input)
 
   await db.prepare(`
     UPDATE support_conversations
-    SET status = 'open', updated_at = CURRENT_TIMESTAMP, last_message_at = CURRENT_TIMESTAMP,
+    SET updated_at = CURRENT_TIMESTAMP, last_message_at = CURRENT_TIMESTAMP,
         ${senderType === "customer" ? "customer_last_read_at" : "admin_last_read_at"} = CURRENT_TIMESTAMP
     WHERE id = ?
   `).bind(conversation.id).run();

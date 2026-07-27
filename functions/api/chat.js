@@ -2,6 +2,7 @@ import { json, requireFirebaseUser, upsertUser } from "../_lib/common.js";
 import {
   assertCustomerConversation,
   createConversation,
+  deleteConversation,
   ensureChatSchema,
   getConversation,
   getMessages,
@@ -35,14 +36,22 @@ export async function onRequestGet({ request, env }) {
     let adminTyping = false;
 
     if (conversationId) {
-      conversation = await assertCustomerConversation(env.DB, user, conversationId);
-      if (url.searchParams.get("markRead") === "1") {
-        await markConversationRead(env.DB, conversationId, "customer");
-        conversation = await getConversation(env.DB, conversationId);
+      conversation = await getConversation(env.DB, conversationId);
+      if (conversation && conversation.firebaseUid !== user.uid) {
+        throw Object.assign(new Error("Conversation not found."), { status: 404 });
+      }
+      if (!conversation && conversations[0]?.id) {
+        conversation = await assertCustomerConversation(env.DB, user, conversations[0].id);
+      }
+      if (conversation && url.searchParams.get("markRead") === "1") {
+        await markConversationRead(env.DB, conversation.id, "customer");
+        conversation = await getConversation(env.DB, conversation.id);
         conversations = await listCustomerConversations(env.DB, user);
       }
-      messages = await getMessages(env.DB, conversationId);
-      adminTyping = await getTyping(env.DB, conversationId, "admin");
+      if (conversation) {
+        messages = await getMessages(env.DB, conversation.id);
+        adminTyping = await getTyping(env.DB, conversation.id, "admin");
+      }
     }
 
     return json({
@@ -76,6 +85,7 @@ export async function onRequestPost({ request, env }) {
 
     if (action === "sendMessage") {
       if (conversation.blocked) throw Object.assign(new Error("Messaging is unavailable for this conversation."), { status: 403 });
+      if (conversation.status === "closed") throw Object.assign(new Error("This conversation is permanently closed."), { status: 400 });
       if (conversation.status === "archived") throw Object.assign(new Error("This conversation is archived."), { status: 400 });
       const message = await insertMessage(env.DB, conversation, user, "customer", input);
       await setTyping(env.DB, conversationId, "customer", user.uid, false);
@@ -83,7 +93,7 @@ export async function onRequestPost({ request, env }) {
     }
 
     if (action === "typing") {
-      if (!conversation.blocked && conversation.status !== "archived") {
+      if (!conversation.blocked && conversation.status === "open") {
         await setTyping(env.DB, conversationId, "customer", user.uid, Boolean(input.typing));
       }
       return json({ ok: true });
@@ -95,6 +105,7 @@ export async function onRequestPost({ request, env }) {
     }
 
     if (action === "closeConversation") {
+      if (conversation.status === "archived") throw Object.assign(new Error("This conversation is archived."), { status: 400 });
       await env.DB.prepare(`
         UPDATE support_conversations SET status = 'closed', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND firebase_uid = ?
       `).bind(conversationId, user.uid).run();
@@ -102,11 +113,13 @@ export async function onRequestPost({ request, env }) {
     }
 
     if (action === "reopenConversation") {
-      if (conversation.blocked || conversation.status === "archived") throw Object.assign(new Error("This conversation cannot be reopened."), { status: 400 });
-      await env.DB.prepare(`
-        UPDATE support_conversations SET status = 'open', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND firebase_uid = ?
-      `).bind(conversationId, user.uid).run();
-      return json({ conversation: await getConversation(env.DB, conversationId) });
+      throw Object.assign(new Error("Closed conversations cannot be reopened. Start a new chat instead."), { status: 400 });
+    }
+
+    if (action === "deleteConversation") {
+      if (conversation.blocked) throw Object.assign(new Error("A blocked conversation can only be deleted by support."), { status: 403 });
+      await deleteConversation(env.DB, conversationId);
+      return json({ deleted: true, conversationId });
     }
 
     throw Object.assign(new Error("Unknown chat action."), { status: 400 });

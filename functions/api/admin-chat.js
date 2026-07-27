@@ -1,6 +1,7 @@
 import { json, requirePermission } from "../_lib/common.js";
 import { logAdminAction } from "../_lib/site.js";
 import {
+  deleteConversation,
   ensureChatSchema,
   getConversation,
   getMessages,
@@ -27,16 +28,18 @@ export async function onRequestGet({ request, env }) {
 
     if (conversationId) {
       conversation = await getConversation(env.DB, conversationId);
-      if (!conversation) throw Object.assign(new Error("Conversation not found."), { status: 404 });
-      if (url.searchParams.get("markRead") === "1") {
-        await markConversationRead(env.DB, conversationId, "admin");
-        conversation = await getConversation(env.DB, conversationId);
+      if (!conversation && conversations[0]?.id) conversation = await getConversation(env.DB, conversations[0].id);
+      if (conversation && url.searchParams.get("markRead") === "1") {
+        await markConversationRead(env.DB, conversation.id, "admin");
+        conversation = await getConversation(env.DB, conversation.id);
         conversations = await listAdminConversations(env.DB);
       }
-      messages = await getMessages(env.DB, conversationId);
-      customerTyping = await getTyping(env.DB, conversationId, "customer");
-      const orderResult = await env.DB.prepare(`SELECT id, order_code, order_status, payment_status, created_at FROM orders WHERE firebase_uid = ? ORDER BY created_at DESC LIMIT 100`).bind(conversation.firebaseUid).all();
-      customerOrders = orderResult.results || [];
+      if (conversation) {
+        messages = await getMessages(env.DB, conversation.id);
+        customerTyping = await getTyping(env.DB, conversation.id, "customer");
+        const orderResult = await env.DB.prepare(`SELECT id, order_code, order_status, payment_status, created_at FROM orders WHERE firebase_uid = ? ORDER BY created_at DESC LIMIT 100`).bind(conversation.firebaseUid).all();
+        customerOrders = orderResult.results || [];
+      }
     }
 
     return json({
@@ -78,6 +81,7 @@ export async function onRequestPost({ request, env }) {
 
     if (action === "sendMessage") {
       if (conversation.blocked) throw Object.assign(new Error("Unblock this customer before replying."), { status: 400 });
+      if (conversation.status === "closed") throw Object.assign(new Error("This conversation is permanently closed."), { status: 400 });
       if (conversation.status === "archived") throw Object.assign(new Error("Restore this conversation before replying."), { status: 400 });
       const settings = await getSupportSettings(env.DB);
       const message = await insertMessage(env.DB, conversation, admin, "admin", {
@@ -89,7 +93,9 @@ export async function onRequestPost({ request, env }) {
     }
 
     if (action === "typing") {
-      await setTyping(env.DB, conversationId, "admin", admin.email, Boolean(input.typing));
+      if (!conversation.blocked && conversation.status === "open") {
+        await setTyping(env.DB, conversationId, "admin", admin.email, Boolean(input.typing));
+      }
       return json({ ok: true });
     }
 
@@ -98,8 +104,21 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: true });
     }
 
+    if (action === "deleteConversation") {
+      await deleteConversation(env.DB, conversationId);
+      await logAdminAction(env.DB, admin, "support_conversation_deleted", "support_conversation", conversationId, {
+        customerEmail: conversation.customerEmail,
+        customerName: conversation.customerName,
+        orderId: conversation.orderId || ""
+      });
+      return json({ deleted: true, conversationId });
+    }
+
     if (action === "updateConversation") {
       const status = ["open", "closed", "archived"].includes(input.status) ? input.status : conversation.status;
+      if (conversation.status === "closed" && status !== "closed") {
+        throw Object.assign(new Error("Closed conversations cannot be reopened or archived. Delete it or start a new chat."), { status: 400 });
+      }
       const blocked = input.blocked === true || Number(input.blocked) === 1 ? 1 : 0;
       const internalNote = String(input.internalNote || "").trim().slice(0, 5000);
       const orderId = String(input.orderId || "").trim() || null;
