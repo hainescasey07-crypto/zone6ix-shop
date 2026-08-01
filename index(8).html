@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Zone6ix Customs — premium custom turfs, gang weapons and individual player customisation.">
+  <meta name="theme-color" id="browserThemeColour" content="#05070a">
+  <title>Zone6ix Customs</title>
+  <link rel="icon" href="/favicon.ico?v=4" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4">
+  <link rel="manifest" href="/site.webmanifest?v=4">
+  <link rel="stylesheet" href="styles.css?v=live-chat-left-fix-2">
+</head>
+<body>
+  <div class="seasonal-effects" id="seasonalEffects" aria-hidden="true"></div>
+  <div class="scroll-progress" id="scrollProgress"></div>
+  <div class="cursor-light" id="cursorLight" aria-hidden="true"></div>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="site-header" id="siteHeader">
+    <a class="brand" href="#home" aria-label="Zone6ix Customs home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 56 56" role="img">
+          <path d="M8 10h40L31 28h17L24 48H8l17-19H8z"/>
+        </svg>
+      </span>
+      <span class="brand-copy">
+        <strong>ZONE6IX</strong>
+        <small>CUSTOM STUDIO</small>
+      </span>
+    </a>
+
+    <nav class="desktop-nav" aria-label="Main navigation">
+      <a href="#collections">Collections</a>
+      <a href="#turfs">Turfs</a>
+      <a href="#guns">Weapons</a>
+      <a href="#identity">Player</a>
+      <a href="#event-store">Event Store</a>
+      <a href="#process">Process</a>
+    </nav>
+
+    <div class="header-actions">
+      <div class="language-control">
+        <button class="language-trigger" id="languageButton" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Change language">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z"/></svg>
+          <span id="languageCurrent">EN</span>
+          <svg class="language-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+        </button>
+        <div class="language-menu" id="languageMenu" role="menu" aria-hidden="true">
+          <button type="button" data-language="en" role="menuitemradio" aria-checked="true"><span>EN</span><strong>English</strong><i></i></button>
+          <button type="button" data-language="es" role="menuitemradio" aria-checked="false"><span>ES</span><strong>Español</strong><i></i></button>
+        </div>
+      </div>
+      <button class="token-wallet-trigger" id="tokenWalletButton" type="button" hidden aria-label="Open Zone Token wallet">
+        <span class="token-wallet-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/><path d="m8.5 9 7-3-4 5h4l-7 6 3-5h-4l1-3Z"/></svg></span>
+        <span><small id="tokenWalletSymbol">ZT</small><strong id="tokenWalletBalance">0</strong></span>
+        <i id="tokenEarningDot"></i>
+      </button>
+      <div class="account-control">
+        <button class="account-trigger" id="accountButton" type="button" aria-haspopup="menu" aria-expanded="false">
+          <span class="account-avatar" id="accountAvatar" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/></svg>
+          </span>
+          <span class="account-trigger-copy">
+            <strong id="accountLabel">Sign in</strong>
+            <small id="accountSubLabel">Google account</small>
+          </span>
+          <svg class="account-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+        </button>
+
+        <div class="account-menu" id="accountMenu" role="menu" aria-hidden="true">
+          <div class="account-menu-profile">
+            <span class="account-menu-avatar" id="accountMenuAvatar"></span>
+            <div><strong id="accountMenuName">Not signed in</strong><small id="accountMenuEmail">Sign in to save orders</small></div>
+          </div>
+          <button type="button" id="walletMenuButton" role="menuitem" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v13H4z"/><path d="M4 9h16M15 13h5v4h-5z"/></svg>
+            <span>Zone Token wallet</span>
+          </button>
+          <button type="button" id="eventStoreMenuButton" role="menuitem">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v12H4zM3 4h18l-1 4H4L3 4Z"/><path d="M9 12h6v8H9z"/></svg>
+            <span>Event Store</span>
+          </button>
+          <button type="button" id="myOrdersButton" role="menuitem">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+            <span>My orders</span>
+          </button>
+          <button type="button" id="supportMenuButton" role="menuitem">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v11H9l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg>
+            <span>Live support</span><b class="menu-unread-badge" id="supportMenuBadge" hidden>0</b>
+          </button>
+          <button type="button" id="adminButton" role="menuitem" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.7 2.8 8.3 7 10 4.2-1.7 7-5.3 7-10V6l-7-3Z"/><path d="M9 12h6M12 9v6"/></svg>
+            <span>Admin dashboard</span>
+          </button>
+          <button type="button" id="signOutButton" role="menuitem" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10"/></svg>
+            <span>Sign out</span>
+          </button>
+        </div>
+      </div>
+      <button class="basket-trigger neon-edge" id="openCartButton" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L20 8H7"/><circle cx="10" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg>
+        <span>Basket</span>
+        <b id="cartCount">0</b>
+      </button>
+    </div>
+  </header>
+
+  <div class="site-announcement" id="siteAnnouncement" hidden><span></span><p id="siteAnnouncementText"></p><button type="button" id="dismissAnnouncement" aria-label="Dismiss announcement">×</button></div>
+
+  <main id="home">
+    <section class="hero section-shell">
+      <div class="hero-grid">
+        <div class="hero-copy reveal">
+          <div class="status-pill" id="siteStatusPill">
+            <span class="live-dot"></span>
+            <span id="siteStatusText">CUSTOM ORDERS OPEN</span>
+            <b>ZONE6IX</b>
+          </div>
+
+          <h1>
+            <span id="heroLineOne">YOUR GANG.</span>
+            <span class="outline-word" id="heroLineTwo">YOUR WORLD.</span>
+            <em id="heroLineThree">BUILT DIFFERENT.</em>
+          </h1>
+
+          <p class="hero-lead" id="heroLead">
+            Premium custom turfs, exclusive weapons and individual player customisation designed for the Zone6ix experience.
+          </p>
+
+          <div class="hero-actions">
+            <a class="primary-cta neon-edge" href="#collections">
+              <span id="primaryCtaText">Explore the studio</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+            <button class="text-cta" type="button" data-scroll-order>
+              <b id="secondaryCtaText">Build an order</b>
+              <span></span>
+            </button>
+          </div>
+
+          <div class="hero-proof">
+            <div>
+              <strong>11</strong>
+              <span>custom products</span>
+            </div>
+            <div>
+              <strong>2</strong>
+              <span>payment options</span>
+            </div>
+            <div>
+              <strong>1:1</strong>
+              <span>gang-specific design</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-stage reveal" data-delay="120">
+          <div class="stage-grid" aria-hidden="true"></div>
+          <div class="scan-beam" aria-hidden="true"></div>
+
+          <div class="stage-toolbar">
+            <span><i></i> Z6 DESIGN SYSTEM</span>
+            <b>LIVE PREVIEW</b>
+          </div>
+
+          <div class="scene-wrap" aria-hidden="true">
+            <div class="scene-orbit orbit-one"></div>
+            <div class="scene-orbit orbit-two"></div>
+            <div class="scene-building building-back">
+              <span></span><span></span><span></span><span></span>
+            </div>
+            <div class="scene-building building-main">
+              <div class="building-sign">Z6</div>
+              <div class="window-row"><span></span><span></span><span></span></div>
+              <div class="window-row"><span></span><span></span><span></span></div>
+              <div class="entry-light"></div>
+            </div>
+            <div class="scene-platform"></div>
+            <div class="scene-label label-a">CUSTOM TURF</div>
+            <div class="scene-label label-b">PLAYER CUSTOMISATION</div>
+            <div class="scene-label label-c">EXCLUSIVE LOADOUT</div>
+          </div>
+
+          <div class="stage-footer">
+            <div>
+              <span>FEATURED BUILD</span>
+              <strong>Medium Turf System</strong>
+            </div>
+            <button type="button" data-scroll-order aria-label="Start featured build">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-ticker" aria-label="Zone6ix services">
+        <div class="ticker-track">
+          <span>Custom Turfs</span><i></i><span>Exclusive Weapons</span><i></i><span>Player Customisation</span><i></i><span>Secure Stripe Checkout</span><i></i><span>Robux Payment</span><i></i><span>Built for Zone6ix</span><i></i>
+          <span>Custom Turfs</span><i></i><span>Exclusive Weapons</span><i></i><span>Player Customisation</span><i></i><span>Secure Stripe Checkout</span><i></i><span>Robux Payment</span><i></i><span>Built for Zone6ix</span><i></i>
+        </div>
+      </div>
+    </section>
+
+    <section class="studio-intro section-shell reveal" id="collections">
+      <div class="section-kicker"><span>01</span> THE STUDIO</div>
+      <div class="intro-grid">
+        <h2><span id="studioHeading">More than a shop.</span><br><em id="studioAccentHeading">Your gang’s design department.</em></h2>
+        <p id="studioLead">Choose a foundation, add the details, then send your references. Every order is built around your gang instead of copied from a generic preset.</p>
+      </div>
+
+      <div class="collection-nav">
+        <a href="#turfs" class="collection-card spotlight-card">
+          <span class="collection-index">01</span>
+          <div class="collection-icon">
+            <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 48V25l24-13 24 13v23H8Z"/><path d="M17 48V31h12v17M36 29h11v9H36z"/><path d="M5 52h54"/></svg>
+          </div>
+          <div>
+            <small>ENVIRONMENTS</small>
+            <h3>Custom Turfs</h3>
+            <p>From a compact base to a full gang headquarters.</p>
+          </div>
+          <svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+
+        <a href="#guns" class="collection-card spotlight-card">
+          <span class="collection-index">02</span>
+          <div class="collection-icon">
+            <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 31h31l8-7h9v12h-9l-8-5"/><path d="M26 31v18h10l5-18M13 31v8h9"/><path d="M46 27v6"/></svg>
+          </div>
+          <div>
+            <small>LOADOUTS</small>
+            <h3>Gang Weapons</h3>
+            <p>Ready-made gold finishes or a completely custom build.</p>
+          </div>
+          <svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+
+        <a href="#identity" class="collection-card spotlight-card">
+          <span class="collection-index">03</span>
+          <div class="collection-icon">
+            <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 7 51 18v27L32 57 13 45V18L32 7Z"/><path d="m23 33 6 6 13-15"/></svg>
+          </div>
+          <div>
+            <small>PLAYER UPGRADES</small>
+            <h3>Player Customisation</h3>
+            <p>Individual player name, emoji and level styling made for one character.</p>
+          </div>
+          <svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+    </section>
+
+    <section class="product-section turf-section section-shell" id="turfs">
+      <div class="section-top reveal">
+        <div>
+          <div class="section-kicker"><span>02</span> CUSTOM TURFS</div>
+          <h2 id="turfHeading">Build a place your gang can own.</h2>
+        </div>
+        <p id="turfLead">Pick the scale first. The logo, colours, rooms, layout and references are supplied during checkout.</p>
+      </div>
+      <div class="product-grid turf-grid" id="turfProducts"></div>
+    </section>
+
+    <section class="showcase-break section-shell reveal">
+      <div class="showcase-copy">
+        <small>FEATURED CONFIGURATION</small>
+        <h2>The full gang headquarters.</h2>
+        <p>Large turf, second floor and custom weapon for the gang, plus an individual player customisation package.</p>
+        <button class="primary-cta neon-edge" type="button" data-scroll-order>
+          <span>Build the full setup</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+      <div class="showcase-stack" aria-hidden="true">
+        <article class="stack-card stack-one"><span>01</span><strong>TURF</strong><small>Large headquarters</small></article>
+        <article class="stack-card stack-two"><span>02</span><strong>LOADOUT</strong><small>Fully custom weapon</small></article>
+        <article class="stack-card stack-three"><span>03</span><strong>PLAYER</strong><small>Name, emoji and level</small></article>
+      </div>
+    </section>
+
+    <section class="product-section weapon-section" id="guns">
+      <div class="section-shell">
+        <div class="weapon-heading reveal">
+          <div class="section-kicker light"><span>03</span> WEAPON LAB</div>
+          <h2 id="weaponHeading">Make the loadout part of the brand.</h2>
+          <p id="weaponLead">Choose a ready-made metallic finish or commission a weapon built around your colours, logo and 3D writing.</p>
+        </div>
+
+        <div class="weapon-display reveal" data-delay="80" aria-hidden="true">
+          <div class="weapon-spec spec-one"><span>01</span><b>CUSTOM TEXTURE</b><small>Colour + material direction</small></div>
+          <div class="weapon-spec spec-two"><span>02</span><b>3D GANG TEXT</b><small>Name applied to the model</small></div>
+          <div class="weapon-spec spec-three"><span>03</span><b>LOGO DETAIL</b><small>Gang mark integration</small></div>
+          <svg class="weapon-render" viewBox="0 0 900 320">
+            <defs>
+              <linearGradient id="weaponMetal" x1="0" x2="1">
+                <stop offset="0" stop-color="#0d1f32"/>
+                <stop offset=".35" stop-color="#1c6aa4"/>
+                <stop offset=".55" stop-color="#7ccfff"/>
+                <stop offset=".72" stop-color="#1b5f94"/>
+                <stop offset="1" stop-color="#081522"/>
+              </linearGradient>
+              <filter id="weaponGlow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+            <g fill="url(#weaponMetal)" stroke="#62c9ff" stroke-width="2" filter="url(#weaponGlow)">
+              <path d="M120 135 280 105h270l95 30h120v55H620l-55 35H310l-95-28H120Z"/>
+              <path d="M270 188h95l-18 105h-72z"/>
+              <path d="M465 200h72l52 99h-89z"/>
+              <path d="M625 141h170v24H625z"/>
+              <path d="M84 145h75v38H84z"/>
+            </g>
+            <text x="385" y="177" fill="#d9f5ff" font-size="34" font-weight="900" letter-spacing="8">ZONE6IX</text>
+            <path d="M150 245h595" stroke="#2e8fd0" stroke-width="1" stroke-dasharray="7 9"/>
+          </svg>
+        </div>
+
+        <div class="product-grid weapon-grid" id="gunProducts"></div>
+      </div>
+    </section>
+
+    <section class="product-section identity-section section-shell" id="identity">
+      <div class="identity-header reveal">
+        <div>
+          <div class="section-kicker"><span>04</span> PLAYER CUSTOMISATION</div>
+          <h2 id="playerHeading">Make your individual player stand out.</h2>
+          <p id="playerLead" class="identity-lead">Customise one player with a name, Roblox-supported emoji and level display.</p>
+        </div>
+        <div class="identity-preview" aria-hidden="true">
+          <span class="id-emblem">Z6</span>
+          <div><small>PLAYER DISPLAY</small><strong>ZONE6IX 🔥</strong><b>LEVEL 100</b></div>
+        </div>
+      </div>
+      <div class="product-grid identity-grid" id="identityProducts"></div>
+    </section>
+
+    <section class="event-store-section section-shell" id="event-store">
+      <div class="event-store-head reveal">
+        <div>
+          <div class="section-kicker"><span>LIVE DROPS</span><i></i></div>
+          <h2 id="eventHeading">THE ZONE6IX <em>EVENT STORE.</em></h2>
+          <p id="eventLead">Stay active, earn Zone Tokens and unlock limited items released directly by the Zone6ix team.</p>
+        </div>
+        <div class="event-wallet-preview" id="eventWalletPreview">
+          <span class="event-wallet-icon"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/><path d="m8.5 9 7-3-4 5h4l-7 6 3-5h-4l1-3Z"/></svg></span>
+          <div><small>YOUR BALANCE</small><strong id="eventWalletBalance">Sign in to earn</strong></div>
+          <button type="button" id="eventWalletOpen">Open wallet</button>
+        </div>
+      </div>
+
+      <div class="earning-strip reveal" data-delay="80">
+        <article><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><small>ACTIVE TIME</small><strong id="earningRateLabel">0.5 ZT every active minute</strong></div></article>
+        <article><span><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 3v4M16 3v4M4 9h16"/></svg></span><div><small>DAILY REWARD</small><strong id="dailyBonusLabel">10 ZT when you return</strong></div></article>
+        <article><span><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg></span><div><small>PURCHASE BONUS</small><strong id="purchaseBonusLabel">25 ZT after a paid order</strong></div></article>
+        <article><span><svg viewBox="0 0 24 24"><path d="M12 3 5 7v5c0 4.5 2.7 7.9 7 9 4.3-1.1 7-4.5 7-9V7l-7-4Z"/><path d="m9 12 2 2 4-5"/></svg></span><div><small>SECURE WALLET</small><strong>Saved to your Google account</strong></div></article>
+      </div>
+
+      <p class="token-terms"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg>Zone Tokens are free rewards with no cash value. They cannot be transferred or exchanged for money.</p>
+      <div class="store-state" id="storeState">
+        <div class="store-loading"><i></i><span>Loading live drops…</span></div>
+      </div>
+      <div class="event-store-grid" id="eventStoreGrid"></div>
+    </section>
+
+    <section class="process-section section-shell" id="process">
+      <div class="section-top reveal">
+        <div>
+          <div class="section-kicker"><span>05</span> HOW IT WORKS</div>
+          <h2 id="processHeading">From idea to in-game.</h2>
+        </div>
+        <p id="processLead">A simple order flow with enough detail for your build to come out how you pictured it.</p>
+      </div>
+
+      <div class="process-line reveal">
+        <article>
+          <span>01</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          <h3>Choose the build</h3>
+          <p>Add every product needed for your gang setup.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4-1 11-11-3-3L5 16l-1 4Z"/><path d="m14 7 3 3"/></svg>
+          <h3>Send the direction</h3>
+          <p>Describe the layout, styling and reference material.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>
+          <h3>Complete payment</h3>
+          <p>Use secure Stripe Checkout or purchase with Robux.</p>
+        </article>
+        <article>
+          <span>04</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+          <h3>Track the build</h3>
+          <p>Sign in to see progress, updates and every past order in one place.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="order-section section-shell" id="order">
+      <div class="order-shell reveal">
+        <aside class="order-aside">
+          <div class="section-kicker light"><span>06</span> START THE ORDER</div>
+          <h2 id="orderHeading">Turn the idea into a real Zone6ix build.</h2>
+          <p id="orderLead">Your basket controls the products. This form tells us who the order belongs to and exactly what should be created.</p>
+
+          <div class="order-benefits">
+            <article>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.7 2.8 8.3 7 10 4.2-1.7 7-5.3 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+              <div><strong>Protected checkout</strong><span>Card details stay with Stripe.</span></div>
+            </article>
+            <article>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v6h6"/></svg>
+              <div><strong>Basket saved locally</strong><span>Your selections remain on this device.</span></div>
+            </article>
+            <article>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H4z"/><path d="M8 7V4h8v3M8 17v3h8v-3"/></svg>
+              <div><strong>Built to your references</strong><span>Links and detailed requests are supported.</span></div>
+            </article>
+          </div>
+
+          <div class="payment-switch-preview">
+            <div><span>GBP</span><strong>Stripe</strong></div>
+            <i></i>
+            <div><span>R$</span><strong>Robux</strong></div>
+          </div>
+        </aside>
+
+        <form class="order-form" id="orderForm">
+          <div class="form-head">
+            <div>
+              <small>ORDER CONFIGURATION</small>
+              <h3>Your details</h3>
+            </div>
+            <span><i></i> SECURE</span>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              <span>Roblox username</span>
+              <input type="text" id="robloxUsername" name="roblox_username" placeholder="Your Roblox username" required>
+            </label>
+            <label>
+              <span>Gang name</span>
+              <input type="text" id="gangName" name="gang_name" placeholder="Your gang name" required>
+            </label>
+            <label>
+              <span>Email address</span>
+              <input type="text" id="customerEmail" name="email" placeholder="Filled from your Google account" readonly required>
+            </label>
+            <label>
+              <span>Discord username</span>
+              <input type="text" id="discordUsername" name="discord_username" placeholder="zone6ixuser" required>
+            </label>
+          </div>
+
+          <label class="full-field">
+            <span>Payment method</span>
+            <select id="paymentMethod" name="payment_method" required>
+              <option value="cash">Card payment — Stripe</option>
+              <option value="robux">Robux payment — Zone6ix</option>
+            </select>
+          </label>
+
+          <label class="full-field">
+            <span>Describe the build</span>
+            <textarea id="customRequest" name="custom_request" rows="6" placeholder="Describe any custom details. Required for custom turfs, custom guns and player customisation; optional for ready-made items."></textarea>
+          </label>
+
+          <label class="full-field">
+            <span>Reference image link <small>optional</small></span>
+            <input type="url" id="referenceLink" name="reference_link" placeholder="Discord, Imgur or another image link">
+          </label>
+
+          <div class="form-grid gang-link-grid">
+            <label>
+              <span>Gang shirt link <small>optional</small></span>
+              <input type="url" id="gangShirtLink" name="gang_shirt_link" placeholder="Roblox shirt URL">
+            </label>
+            <label>
+              <span>Gang pants link <small>optional</small></span>
+              <input type="url" id="gangPantsLink" name="gang_pants_link" placeholder="Roblox pants URL">
+            </label>
+          </div>
+          <label class="full-field">
+            <span>Gang group link <small>optional</small></span>
+            <input type="url" id="gangGroupLink" name="gang_group_link" placeholder="Roblox group URL">
+          </label>
+
+          <div class="order-account-state" id="orderAccountState">
+            <span class="order-account-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/></svg></span>
+            <div><strong>Google sign-in required</strong><small>Your order and progress will be saved to your account.</small></div>
+            <button type="button" id="orderSignInButton">Sign in</button>
+          </div>
+
+          <button class="submit-order neon-edge" type="submit">
+            <span>Review my order</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <p class="form-disclaimer">You will review every detail before leaving for Stripe or Roblox.</p>
+        </form>
+      </div>
+    </section>
+
+    <section class="faq-section section-shell reveal" id="faq">
+      <div class="faq-title">
+        <div class="section-kicker"><span>07</span> INFORMATION</div>
+        <h2>Before you place it.</h2>
+      </div>
+      <div class="faq-list">
+        <details>
+          <summary>How long does an order take?<span></span></summary>
+          <p>Time depends on the size and detail of the request. You will be contacted after ordering with the next step.</p>
+        </details>
+        <details>
+          <summary>Can I send a completely original idea?<span></span></summary>
+          <p>Yes. Use the request box and reference link. Complicated ideas may need discussion before the work begins.</p>
+        </details>
+        <details>
+          <summary>How does Robux checkout work?<span></span></summary>
+          <p>The website opens Zone6ix and sends the purchase prompts for the products currently in your basket.</p>
+        </details>
+        <details>
+          <summary>Are card details stored on this website?<span></span></summary>
+          <p>No. Card payment is completed on Stripe Checkout rather than inside this page.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="section-shell footer-grid">
+      <a class="brand footer-brand" href="#home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 56 56"><path d="M8 10h40L31 28h17L24 48H8l17-19H8z"/></svg></span>
+        <span class="brand-copy"><strong>ZONE6IX</strong><small>CUSTOM STUDIO</small></span>
+      </a>
+      <p id="footerDescription"><span id="footerDescriptionText">Premium custom content for the Zone6ix Roblox experience.</span><button class="footer-contact-copy" id="footerContactButton" type="button" title="Copy Discord username"><span id="footerContactText">Discord: Ykzues</span><small id="footerContactHint">Copy</small></button></p>
+      <div class="footer-links"><a href="#collections">Collections</a><a href="#process">Process</a><a href="#order">Order</a><button type="button" data-legal-tab="terms">Terms</button><button type="button" data-legal-tab="privacy">Privacy</button><button type="button" data-legal-tab="refunds">Refunds</button></div>
+      <span class="footer-status" id="footerStatus"><i></i> Custom orders open</span>
+    </div>
+  </footer>
+
+
+  <button class="support-chat-launcher" id="supportChatLauncher" type="button" aria-label="Open Zone6ix live support" aria-expanded="false">
+    <span class="support-launcher-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v12H9l-5 4V5Z"/><path d="M8 9h8M8 13h5"/></svg></span>
+    <span class="support-launcher-copy"><strong>Live support</strong><small id="supportLauncherStatus">Sign in to chat</small></span>
+    <b id="supportChatBadge" hidden>0</b>
+  </button>
+
+  <section class="support-chat-panel" id="supportChatPanel" aria-hidden="true" aria-label="Zone6ix live support">
+    <header class="support-chat-header">
+      <div class="support-brand-orb"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/><path d="m8.5 9 7-3-4 5h4l-7 6 3-5h-4l1-3Z"/></svg></div>
+      <div><strong id="supportDisplayName">Zone6ix Support</strong><small><i id="supportStatusDot"></i><span id="supportStatusText">Offline</span> · <span id="supportReplyText">Leave a message</span></small></div>
+      <button type="button" id="supportMinimise" aria-label="Minimise chat"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+    </header>
+    <div class="support-chat-toolbar" id="supportChatToolbar" hidden>
+      <select id="supportConversationSelect" aria-label="Choose support conversation"></select>
+      <button type="button" id="supportNewConversation">New</button>
+    </div>
+    <div class="support-chat-signin" id="supportChatSignin">
+      <div class="support-empty-icon"><svg viewBox="0 0 64 64"><path d="M9 12h46v34H26L13 56V46H9V12Z"/><path d="M19 25h26M19 34h17"/></svg></div>
+      <strong>Talk directly to Zone6ix</strong>
+      <p>Sign in with Google so your messages, replies and order details stay saved.</p>
+      <button class="dashboard-primary" id="supportSignIn" type="button">Sign in to start</button>
+    </div>
+    <div class="support-chat-start" id="supportChatStart" hidden>
+      <div class="support-empty-icon"><svg viewBox="0 0 64 64"><path d="M9 12h46v34H26L13 56V46H9V12Z"/><path d="M19 25h26M19 34h17"/></svg></div>
+      <strong>Start a conversation</strong>
+      <p>Link an order when your question is about a purchase, or choose general support.</p>
+      <label><span>Related order</span><select id="supportOrderSelect"><option value="">General support</option></select></label>
+      <button class="dashboard-primary" id="supportStartConversation" type="button">Start chat</button>
+      <small id="supportStartMessage"></small>
+    </div>
+    <div class="support-chat-active" id="supportChatActive" hidden>
+      <div class="support-conversation-meta" id="supportConversationMeta"></div>
+      <div class="support-message-list" id="supportMessageList"><div class="dashboard-loading"><i></i><span>Loading messages…</span></div></div>
+      <div class="support-typing" id="supportAdminTyping" hidden><i></i><i></i><i></i><span>Zone6ix is typing</span></div>
+      <div class="support-image-preview" id="supportImagePreview" hidden></div>
+      <form class="support-compose" id="supportComposeForm">
+        <label class="support-attach" title="Attach image"><input id="supportImageInput" type="file" accept="image/jpeg,image/png,image/webp"><svg viewBox="0 0 24 24"><path d="m8 12 5-5a4 4 0 0 1 6 6l-7 7a6 6 0 0 1-9-9l8-8"/></svg></label>
+        <textarea id="supportMessageInput" maxlength="2500" rows="1" placeholder="Write a message…"></textarea>
+        <button type="submit" id="supportSendButton" aria-label="Send message"><svg viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2-7-8-3Z"/><path d="m11 14 4-4"/></svg></button>
+      </form>
+      <div class="support-chat-actions"><button type="button" id="supportConversationToggle">Close conversation</button><span id="supportComposeMessage"></span></div>
+    </div>
+  </section>
+
+  <div class="basket-dock" id="basketDock">
+    <button type="button" id="basketDockButton">
+      <span><b id="dockCount">0</b> items selected</span>
+      <strong id="dockTotal">£0.00</strong>
+      <em>View basket</em>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+
+  <aside class="cart-panel" id="cartPanel" aria-label="Shopping basket">
+    <div class="cart-header">
+      <div><small>YOUR CONFIGURATION</small><h2>Basket</h2></div>
+      <button class="icon-button" id="closeCartButton" type="button" aria-label="Close basket"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-empty" id="cartEmpty">
+      <div class="empty-icon"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M10 14h7l6 28h25l6-19H20"/><circle cx="28" cy="51" r="3"/><circle cx="47" cy="51" r="3"/></svg></div>
+      <strong>Your build is empty.</strong>
+      <p>Add a turf, weapon or player upgrade to begin.</p>
+    </div>
+    <div class="cart-summary">
+      <div><span>Card total</span><strong id="cashTotal">£0.00</strong></div>
+      <div><span>Robux total</span><strong id="robuxTotal">0 R$</strong></div>
+      <button class="submit-order neon-edge" id="continueButton" type="button"><span>Continue to order</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="review-modal" id="reviewModal" role="dialog" aria-modal="true" aria-label="Review your order">
+    <button class="icon-button modal-close" id="closeModalButton" type="button" aria-label="Close review"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    <div class="modal-eyebrow"><i></i> FINAL CHECK</div>
+    <h2>Review the build.</h2>
+    <p>Confirm every detail before continuing to your selected payment method.</p>
+    <div id="reviewContent"></div>
+    <button class="submit-order neon-edge" id="paymentButton" type="button"><span>Pay securely with Stripe</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <small class="modal-note">Card payments open Stripe. Robux payments open Zone6ix.</small>
+  </div>
+
+
+  <div class="redeem-backdrop" id="redeemBackdrop" aria-hidden="true"></div>
+  <section class="redeem-modal" id="redeemModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="redeemModalTitle">
+    <button class="icon-button redeem-close" id="closeRedeemModal" type="button" aria-label="Close redemption"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    <div class="redeem-item-preview" id="redeemItemPreview"></div>
+    <div class="redeem-modal-copy"><small>ZONE TOKEN REDEMPTION</small><h2 id="redeemModalTitle">Confirm your item</h2><p id="redeemModalDescription"></p></div>
+    <label class="redeem-field"><span>Roblox username for delivery</span><input id="redeemRobloxUsername" maxlength="50" autocomplete="off" placeholder="Your Roblox username"></label>
+    <label class="redeem-field" id="redeemQuantityField"><span>Quantity</span><input id="redeemQuantity" type="number" min="1" max="1" value="1"></label>
+    <div class="redeem-cost-line"><span>Total</span><strong id="redeemTotalCost">0 ZT</strong></div>
+    <button class="submit-order neon-edge" id="confirmRedeemButton" type="button"><span>Redeem item</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <small class="redeem-message" id="redeemMessage"></small>
+  </section>
+
+  <div class="dashboard-backdrop" id="dashboardBackdrop" aria-hidden="true"></div>
+
+  <section class="dashboard-modal legal-dashboard" id="legalDashboard" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="legalDashboardTitle">
+    <header class="dashboard-header">
+      <div><small>ZONE6IX INFORMATION</small><h2 id="legalDashboardTitle">Terms & policies</h2></div>
+      <button class="icon-button" id="closeLegalDashboard" type="button" aria-label="Close policies"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    </header>
+    <div class="legal-dashboard-body">
+      <nav class="legal-tabs"><button class="active" type="button" data-legal-panel="terms">Terms</button><button type="button" data-legal-panel="privacy">Privacy</button><button type="button" data-legal-panel="refunds">Refunds</button><button type="button" data-legal-panel="tokens">Token rules</button></nav>
+      <article class="legal-panel active" id="legalPanelTerms"><h3>Terms of service</h3><p id="publicTermsText"></p></article>
+      <article class="legal-panel" id="legalPanelPrivacy"><h3>Privacy notice</h3><p id="publicPrivacyText"></p></article>
+      <article class="legal-panel" id="legalPanelRefunds"><h3>Refund policy</h3><p id="publicRefundText"></p></article>
+      <article class="legal-panel" id="legalPanelTokens"><h3>Zone Token rules</h3><p id="publicTokenRulesText"></p></article>
+    </div>
+  </section>
+
+  <section class="dashboard-modal customer-dashboard" id="ordersDashboard" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="ordersDashboardTitle">
+    <header class="dashboard-header">
+      <div>
+        <small>ZONE6IX ACCOUNT</small>
+        <h2 id="ordersDashboardTitle">My orders</h2>
+      </div>
+      <div class="dashboard-header-actions">
+        <button class="dashboard-refresh" id="refreshOrdersButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+          Refresh
+        </button>
+        <button class="icon-button" id="closeOrdersDashboard" type="button" aria-label="Close My Orders"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+      </div>
+    </header>
+
+    <div class="dashboard-layout">
+      <aside class="profile-panel">
+        <div class="profile-identity">
+          <span id="profileAvatar"></span>
+          <div><strong id="profileName">Zone6ix customer</strong><small id="profileEmail"></small></div>
+        </div>
+        <form id="profileForm" class="profile-form">
+          <label><span>Saved Roblox username</span><input id="profileRobloxUsername" maxlength="50" placeholder="Roblox username"></label>
+          <label><span>Saved Discord username</span><input id="profileDiscordUsername" maxlength="80" placeholder="Discord username"></label>
+          <label><span>Saved gang name</span><input id="profileGangName" maxlength="100" placeholder="Gang name"></label>
+          <button class="dashboard-primary" type="submit">Save my details</button>
+          <small class="profile-message" id="profileMessage"></small>
+        </form>
+      </aside>
+
+      <main class="orders-content">
+        <div class="orders-summary" id="ordersSummary"></div>
+        <div class="orders-list" id="ordersList">
+          <div class="dashboard-loading"><i></i><span>Loading your orders…</span></div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <section class="dashboard-modal token-dashboard" id="tokenDashboard" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="tokenDashboardTitle">
+    <header class="dashboard-header token-dashboard-header">
+      <div>
+        <small>ZONE6IX REWARDS</small>
+        <h2 id="tokenDashboardTitle">Zone Token wallet</h2>
+      </div>
+      <div class="dashboard-header-actions">
+        <button class="dashboard-refresh" id="refreshTokenWallet" type="button"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>Refresh</button>
+        <button class="icon-button" id="closeTokenDashboard" type="button" aria-label="Close Zone Token wallet"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+      </div>
+    </header>
+
+    <div class="token-dashboard-body">
+      <section class="wallet-hero-panel">
+        <div class="wallet-balance-block">
+          <span class="wallet-large-mark"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/><path d="m8.5 9 7-3-4 5h4l-7 6 3-5h-4l1-3Z"/></svg></span>
+          <div><small>AVAILABLE BALANCE</small><strong id="walletLargeBalance">0 ZT</strong><span id="walletLifetimeText">0 earned · 0 spent</span></div>
+        </div>
+        <div class="earning-status-card" id="earningStatusCard">
+          <div class="earning-status-top"><span><i></i>ACTIVE EARNING</span><strong id="earningStatusText">Waiting for sign-in</strong></div>
+          <div class="earning-progress"><span id="earningProgressBar"></span></div>
+          <div class="earning-status-bottom"><small id="earningTodayText">0 active minutes today</small><small id="earningLimitText">Daily limit: 120 min</small></div>
+        </div>
+      </section>
+
+      <div class="wallet-tabs" role="tablist">
+        <button class="active" type="button" data-wallet-tab="activity">Token activity</button>
+        <button type="button" data-wallet-tab="redemptions">My redemptions</button>
+        <button type="button" data-wallet-tab="how">How to earn</button>
+      </div>
+      <div class="wallet-tab-panel active" id="walletActivityPanel"><div class="dashboard-loading"><i></i><span>Loading token activity…</span></div></div>
+      <div class="wallet-tab-panel" id="walletRedemptionsPanel"></div>
+      <div class="wallet-tab-panel" id="walletHowPanel">
+        <div class="wallet-how-grid">
+          <article><span>01</span><div><strong>Stay genuinely active</strong><p>Tokens count while this tab is visible and you are using the site. Leaving it idle pauses earning.</p></div></article>
+          <article><span>02</span><div><strong>Return each day</strong><p>Your daily login bonus is added once per day when you open your wallet.</p></div></article>
+          <article><span>03</span><div><strong>Complete purchases</strong><p>Paid Stripe orders and verified Robux orders receive the configured purchase bonus.</p></div></article>
+          <article><span>04</span><div><strong>Redeem limited drops</strong><p>Spend tokens in the Event Store. Redemptions are saved to this account and tracked by the admin.</p></div></article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-modal admin-dashboard" id="adminDashboard" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="adminDashboardTitle">
+    <header class="dashboard-header admin-header">
+      <div>
+        <small id="adminDashboardKicker">OWNER CONTROL CENTRE</small>
+        <h2 id="adminDashboardTitle">Zone6ix orders</h2>
+      </div>
+      <div class="dashboard-header-actions">
+        <button class="dashboard-refresh" id="refreshAdminButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+          Refresh
+        </button>
+        <button class="icon-button" id="closeAdminDashboard" type="button" aria-label="Close admin dashboard"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+      </div>
+    </header>
+
+    <nav class="admin-section-tabs" id="adminSectionTabs" aria-label="Admin sections">
+      <button class="active" type="button" data-admin-tab="orders"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg><span>Orders</span></button>
+      <button id="adminChatTab" type="button" data-admin-tab="chat"><svg viewBox="0 0 24 24"><path d="M4 5h16v12H9l-5 4V5Z"/><path d="M8 9h8M8 13h5"/></svg><span>Live Chat</span><b class="admin-tab-badge" id="adminChatBadge" hidden>0</b></button>
+      <button type="button" data-admin-tab="store"><svg viewBox="0 0 24 24"><path d="M4 8h16v12H4zM3 4h18l-1 4H4L3 4Z"/></svg><span>Event Store</span></button>
+      <button type="button" data-admin-tab="redemptions"><svg viewBox="0 0 24 24"><path d="M4 6h16v14H4zM8 3v6M16 3v6M4 10h16"/></svg><span>Redemptions</span></button>
+      <button type="button" data-admin-tab="tokens"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 6.3v8.6L12 22l7.5-7.1V6.3L12 2Z"/></svg><span>Token settings</span></button>
+      <button id="adminSiteTab" type="button" data-admin-tab="site"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/><path d="M17 15h3v5h-5v-3"/></svg><span>Site & pricing</span></button>
+      <button id="adminSecurityTab" type="button" data-admin-tab="security"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.7 2.8 8.3 7 10 4.2-1.7 7-5.3 7-10V6l-7-3Z"/><path d="M9 12h6"/></svg><span>Logs & exports</span></button>
+      <button type="button" data-admin-tab="customers"><svg viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm10-1a3 3 0 1 0 0-6M2 21a7 7 0 0 1 14 0m1-7a5 5 0 0 1 5 5"/></svg><span>Customers</span></button>
+      <button id="adminAccessTab" hidden type="button" data-admin-tab="admins"><svg viewBox="0 0 24 24"><path d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M4 21a8 8 0 0 1 16 0M19 3v6M16 6h6"/></svg><span>Admins</span></button>
+    </nav>
+
+    <div class="admin-tab-panel active" id="adminPanelOrders" data-admin-panel="orders">
+    <div class="admin-stats" id="adminStats"></div>
+
+    <div class="admin-toolbar">
+      <label class="admin-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
+        <input id="adminSearch" type="search" placeholder="Search order code, gang, Roblox, email or Discord">
+      </label>
+      <select id="adminStatusFilter" aria-label="Filter orders by status">
+        <option value="all">All statuses</option>
+        <option value="awaiting_payment">Awaiting payment</option>
+        <option value="paid">Paid</option>
+        <option value="reviewing">Reviewing</option>
+        <option value="in_progress">In progress</option>
+        <option value="ready">Ready</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+
+    <div class="admin-workspace">
+      <div class="admin-order-list" id="adminOrderList">
+        <div class="dashboard-loading"><i></i><span>Loading all orders…</span></div>
+      </div>
+
+      <aside class="admin-editor" id="adminEditor">
+        <div class="admin-editor-empty">
+          <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 10h40v44H12z"/><path d="M20 21h24M20 31h24M20 41h15"/></svg>
+          <strong>Select an order</strong>
+          <span>Customer information and update controls will appear here.</span>
+        </div>
+      </aside>
+    </div>
+    </div>
+
+
+    <div class="admin-tab-panel" id="adminPanelChat" data-admin-panel="chat">
+      <div class="support-admin-shell">
+        <aside class="support-admin-sidebar">
+          <div class="admin-panel-head"><div><small>SUPPORT INBOX</small><h3>Live conversations</h3></div><button class="dashboard-refresh" id="refreshAdminChat" type="button">Refresh</button></div>
+          <div class="support-admin-filters">
+            <input id="adminChatSearch" type="search" placeholder="Search customer, Roblox, Discord or order">
+            <select id="adminChatFilter"><option value="all">All conversations</option><option value="unread">Unread</option><option value="open">Open</option><option value="closed">Closed</option><option value="archived">Archived</option><option value="blocked">Blocked</option></select>
+          </div>
+          <div class="support-admin-list" id="adminChatList"><div class="dashboard-loading"><i></i><span>Loading conversations…</span></div></div>
+        </aside>
+        <main class="support-admin-main">
+          <section class="support-presence-card">
+            <div><small>PUBLIC CHAT STATUS</small><strong>Control what customers see</strong></div>
+            <label><span>Status</span><select id="adminSupportStatus"><option value="online">Online</option><option value="away">Away</option><option value="offline">Offline</option></select></label>
+            <label><span>Display name</span><input id="adminSupportDisplayName" maxlength="60" value="Zone6ix Support"></label>
+            <label class="wide"><span>Reply message</span><input id="adminSupportReplyText" maxlength="120" placeholder="Usually replies within a few hours"></label>
+            <button class="dashboard-primary compact" id="saveSupportSettings" type="button">Publish status</button>
+            <small id="supportSettingsMessage"></small>
+          </section>
+          <section class="support-admin-empty" id="adminChatEmpty"><svg viewBox="0 0 64 64"><path d="M9 12h46v34H26L13 56V46H9V12Z"/><path d="M19 25h26M19 34h17"/></svg><strong>Select a conversation</strong><span>Messages and customer information will appear here.</span></section>
+          <section class="support-admin-conversation" id="adminChatConversation" hidden>
+            <header class="support-admin-conversation-head" id="adminChatConversationHead"></header>
+            <div class="support-admin-grid">
+              <div class="support-admin-thread">
+                <div class="support-message-list admin" id="adminChatMessages"></div>
+                <div class="support-typing" id="supportCustomerTyping" hidden><i></i><i></i><i></i><span>Customer is typing</span></div>
+                <div class="support-image-preview" id="adminSupportImagePreview" hidden></div>
+                <form class="support-compose admin" id="adminSupportCompose">
+                  <label class="support-attach"><input id="adminSupportImageInput" type="file" accept="image/jpeg,image/png,image/webp"><svg viewBox="0 0 24 24"><path d="m8 12 5-5a4 4 0 0 1 6 6l-7 7a6 6 0 0 1-9-9l8-8"/></svg></label>
+                  <textarea id="adminSupportMessage" maxlength="2500" rows="2" placeholder="Reply as Zone6ix Support…"></textarea>
+                  <button type="submit" aria-label="Send reply"><svg viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2-7-8-3Z"/><path d="m11 14 4-4"/></svg></button>
+                </form>
+                <div class="support-quick-replies" id="supportQuickReplies"><button type="button">Thanks for messaging — I’m checking this now.</button><button type="button">Can you send a screenshot or reference image?</button><button type="button">I’ve linked this chat to your order.</button><button type="button">Your order update has been saved.</button></div>
+                <small id="adminSupportComposeMessage"></small>
+              </div>
+              <aside class="support-admin-details">
+                <div id="adminChatCustomerDetails"></div>
+                <label><span>Linked order</span><select id="adminChatOrderSelect"><option value="">No linked order</option></select></label>
+                <label><span>Internal admin note</span><textarea id="adminChatInternalNote" maxlength="5000" placeholder="Customers cannot see this note."></textarea></label>
+                <label><span>Conversation status</span><select id="adminChatStatus"><option value="open">Open</option><option value="closed">Closed</option><option value="archived">Archived</option></select></label>
+                <label class="admin-toggle compact"><input id="adminChatBlocked" type="checkbox"><span></span><div><strong>Block messages</strong><small>Customer keeps history but cannot send.</small></div></label>
+                <button class="dashboard-primary" id="saveAdminConversation" type="button">Save conversation</button>
+                <small id="adminConversationMessage"></small>
+              </aside>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel" id="adminPanelStore" data-admin-panel="store">
+      <div class="store-admin-layout">
+        <section class="store-admin-list-panel">
+          <div class="admin-panel-head"><div><small>LIVE INVENTORY</small><h3>Event Store items</h3></div><button class="dashboard-primary compact" id="createStoreItemButton" type="button">Create item</button></div>
+          <div class="store-admin-filters"><input id="storeAdminSearch" type="search" placeholder="Search store items"><select id="storeAdminStatus"><option value="all">All statuses</option><option value="live">Live</option><option value="scheduled">Scheduled</option><option value="draft">Draft</option><option value="hidden">Hidden</option><option value="sold_out">Sold out</option><option value="archived">Archived</option></select></div>
+          <div class="store-admin-list" id="storeAdminList"><div class="dashboard-loading"><i></i><span>Loading store items…</span></div></div>
+        </section>
+        <aside class="store-item-editor" id="storeItemEditor"><div class="admin-editor-empty"><svg viewBox="0 0 64 64"><path d="M8 18h48v36H8zM5 10h54l-3 8H8l-3-8Z"/><path d="M24 30h16v24H24z"/></svg><strong>Select or create an item</strong><span>Edit the price, stock, dates, image and delivery settings without touching GitHub.</span></div></aside>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel" id="adminPanelRedemptions" data-admin-panel="redemptions">
+      <div class="redemption-admin-layout">
+        <section><div class="admin-panel-head"><div><small>EVENT FULFILMENT</small><h3>Store redemptions</h3></div><button class="dashboard-refresh" id="refreshRedemptions" type="button">Refresh</button></div><div class="store-admin-filters"><input id="redemptionSearch" type="search" placeholder="Search code, item, email or Roblox"><select id="redemptionStatusFilter"><option value="all">All statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="in_progress">In progress</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option><option value="refunded">Refunded</option></select></div><div class="redemption-admin-list" id="redemptionAdminList"><div class="dashboard-loading"><i></i><span>Loading redemptions…</span></div></div></section>
+        <aside class="redemption-editor" id="redemptionEditor"><div class="admin-editor-empty"><svg viewBox="0 0 64 64"><path d="M12 10h40v44H12z"/><path d="M20 21h24M20 31h24M20 41h15"/></svg><strong>Select a redemption</strong><span>Update delivery progress and customer messages here.</span></div></aside>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel" id="adminPanelTokens" data-admin-panel="tokens">
+      <div class="token-settings-layout"><section class="token-settings-card"><div class="admin-panel-head"><div><small>REWARD ECONOMY</small><h3>Zone Token settings</h3></div><span class="settings-live-badge"><i></i>Updates live instantly</span></div><form id="tokenSettingsForm" class="token-settings-form"><div class="admin-form-grid"><label><span>Token name</span><input id="settingTokenName" maxlength="40" required></label><label><span>Symbol</span><input id="settingTokenSymbol" maxlength="8" required></label><label><span>Tokens per active minute</span><input id="settingEarnRate" type="number" min="0" step="0.001" required></label><label><span>Daily active-minute limit</span><input id="settingDailyLimit" type="number" min="0" max="1440" step="1" required></label><label><span>Daily login bonus</span><input id="settingDailyBonus" type="number" min="0" step="0.001" required></label><label><span>Paid purchase bonus</span><input id="settingPurchaseBonus" type="number" min="0" step="0.001" required></label></div><label class="admin-toggle"><input id="settingEarningEnabled" type="checkbox"><span></span><div><strong>Active-time earning enabled</strong><small>Turn this off to pause all new active-time rewards.</small></div></label><div class="admin-save-row"><button class="dashboard-primary" type="submit">Save token settings</button><span id="tokenSettingsMessage"></span></div></form></section><aside class="economy-preview"><small>LIVE PREVIEW</small><strong id="economyPreviewRate">0.5 ZT / minute</strong><p id="economyPreviewDaily">Up to 60 ZT from active time each day</p><div><span>Daily login</span><b id="economyPreviewLogin">10 ZT</b></div><div><span>Paid order</span><b id="economyPreviewPurchase">25 ZT</b></div></aside></div>
+    </div>
+
+    <div class="admin-tab-panel" id="adminPanelSite" data-admin-panel="site">
+      <div class="site-manager-shell">
+        <section class="site-manager-card">
+          <div class="admin-panel-head"><div><small>LIVE WEBSITE CONTROL</small><h3>Site appearance and wording</h3></div><span class="settings-live-badge"><i></i>No GitHub edit needed</span></div>
+          <form id="siteSettingsForm" class="site-settings-form">
+            <div class="admin-form-grid">
+              <label><span>Site name</span><input id="siteSettingName" maxlength="60" required></label>
+              <label><span>Studio label</span><input id="siteSettingStudio" maxlength="40" required></label>
+              <label><span>Order status text</span><input id="siteSettingStatus" maxlength="60" required></label>
+              <label><span>Public contact</span><input id="siteSettingContact" maxlength="100" value="Discord: Ykzues" required></label>
+              <label><span>Hero line 1</span><input id="siteSettingHero1" maxlength="60" required></label>
+              <label><span>Hero line 2</span><input id="siteSettingHero2" maxlength="60" required></label>
+              <label><span>Hero line 3</span><input id="siteSettingHero3" maxlength="60" required></label>
+              <label><span>Announcement</span><input id="siteSettingAnnouncement" maxlength="180"></label>
+              <label><span>Primary button</span><input id="siteSettingPrimaryCta" maxlength="40" required></label>
+              <label><span>Secondary button</span><input id="siteSettingSecondaryCta" maxlength="40" required></label>
+            </div>
+            <label><span>Hero description</span><textarea id="siteSettingLead" maxlength="400" required></textarea></label>
+            <details class="site-content-details">
+              <summary>Section headings and descriptions</summary>
+              <div class="admin-form-grid">
+                <label><span>Studio heading</span><input id="siteSettingStudioHeading" maxlength="100" required></label>
+                <label><span>Studio highlighted line</span><input id="siteSettingStudioAccent" maxlength="120" required></label>
+                <label class="wide"><span>Studio description</span><textarea id="siteSettingStudioLead" maxlength="500" required></textarea></label>
+                <label><span>Turf heading</span><input id="siteSettingTurfHeading" maxlength="120" required></label>
+                <label><span>Weapon heading</span><input id="siteSettingWeaponHeading" maxlength="120" required></label>
+                <label class="wide"><span>Turf description</span><textarea id="siteSettingTurfLead" maxlength="500" required></textarea></label>
+                <label class="wide"><span>Weapon description</span><textarea id="siteSettingWeaponLead" maxlength="500" required></textarea></label>
+                <label><span>Player heading</span><input id="siteSettingPlayerHeading" maxlength="120" required></label>
+                <label><span>Event Store heading</span><input id="siteSettingEventHeading" maxlength="120" required></label>
+                <label class="wide"><span>Player description</span><textarea id="siteSettingPlayerLead" maxlength="500" required></textarea></label>
+                <label class="wide"><span>Event Store description</span><textarea id="siteSettingEventLead" maxlength="500" required></textarea></label>
+                <label><span>Process heading</span><input id="siteSettingProcessHeading" maxlength="120" required></label>
+                <label><span>Order heading</span><input id="siteSettingOrderHeading" maxlength="120" required></label>
+                <label class="wide"><span>Process description</span><textarea id="siteSettingProcessLead" maxlength="500" required></textarea></label>
+                <label class="wide"><span>Order description</span><textarea id="siteSettingOrderLead" maxlength="500" required></textarea></label>
+              </div>
+            </details>
+
+            <details class="theme-studio-details" open>
+              <summary>Theme Studio — colours and seasonal effects</summary>
+              <div class="theme-preset-row" id="themePresetRow">
+                <button type="button" data-theme-preset="zone6ix">Zone6ix</button><button type="button" data-theme-preset="halloween">Halloween</button><button type="button" data-theme-preset="christmas">Christmas</button><button type="button" data-theme-preset="valentine">Valentine</button><button type="button" data-theme-preset="summer">Summer</button><button type="button" data-theme-preset="blackout">Blackout</button>
+              </div>
+              <input type="hidden" id="siteThemePreset" value="zone6ix">
+              <div class="theme-colour-grid">
+                <label><span>Main accent</span><input id="siteSettingAccent1" type="color"></label>
+                <label><span>Second accent</span><input id="siteSettingAccent2" type="color"></label>
+                <label><span>Page background</span><input id="siteThemeBackground" type="color"></label>
+                <label><span>Second background</span><input id="siteThemeBackgroundAlt" type="color"></label>
+                <label><span>Cards / panels</span><input id="siteThemeSurface" type="color"></label>
+                <label><span>Raised panels</span><input id="siteThemeSurfaceAlt" type="color"></label>
+                <label><span>Navigation</span><input id="siteThemeNav" type="color"></label>
+                <label><span>Main text</span><input id="siteThemeText" type="color"></label>
+                <label><span>Muted text</span><input id="siteThemeMuted" type="color"></label>
+                <label><span>Borders</span><input id="siteThemeBorder" type="color"></label>
+                <label><span>Glow</span><input id="siteThemeGlow" type="color"></label>
+                <label><span>Success</span><input id="siteThemeSuccess" type="color"></label>
+                <label><span>Warning</span><input id="siteThemeWarning" type="color"></label>
+                <label><span>Error</span><input id="siteThemeDanger" type="color"></label>
+              </div>
+              <div class="seasonal-settings-grid">
+                <label class="admin-toggle"><input id="siteSeasonalEnabled" type="checkbox"><span></span><div><strong>Seasonal decorations</strong><small>Show snow, lights, bats or fog across the live site.</small></div></label>
+                <label><span>Effect</span><select id="siteSeasonalEffect"><option value="none">None</option><option value="halloween">Halloween</option><option value="christmas">Christmas</option></select></label>
+                <label><span>Intensity</span><select id="siteSeasonalIntensity"><option value="1">Low</option><option value="2">Medium</option><option value="3">High</option></select></label>
+                <label><span>Start date (optional)</span><input id="siteSeasonalStart" type="date"></label>
+                <label><span>End date (optional)</span><input id="siteSeasonalEnd" type="date"></label>
+              </div>
+              <p class="manager-help">Preview changes instantly on this page. Press Publish site changes to update every visitor. Scheduled decorations only appear between the dates you choose.</p>
+            </details>
+            <label class="admin-toggle"><input id="siteSettingOpen" type="checkbox"><span></span><div><strong>Custom orders open</strong><small>Controls the live status shown publicly.</small></div></label>
+            <div class="admin-save-row"><button class="dashboard-primary" type="submit">Publish site changes</button><span id="siteSettingsMessage"></span></div>
+          </form>
+        </section>
+
+        <section class="site-manager-card core-product-manager">
+          <div class="admin-panel-head"><div><small>CORE SHOP CATALOGUE</small><h3>Products and prices</h3></div><button class="dashboard-refresh" id="refreshSiteManager" type="button">Refresh</button></div>
+          <p class="manager-help">Change names, descriptions, card prices, displayed Robux prices and visibility. Card prices update instantly. Keep every Robux amount and Developer Product ID matched to Roblox Creator Dashboard and your Zone6ix receipt scripts.</p>
+          <div class="core-products-list" id="coreProductsList"><div class="dashboard-loading"><i></i><span>Loading products…</span></div></div>
+        </section>
+
+        <section class="site-manager-card legal-manager">
+          <div class="admin-panel-head"><div><small>LEGAL & CUSTOMER RULES</small><h3>Public policies</h3></div></div>
+          <form id="legalSettingsForm" class="legal-settings-form">
+            <label><span>Terms of service</span><textarea id="siteTermsText" maxlength="12000" required></textarea></label>
+            <label><span>Privacy notice</span><textarea id="sitePrivacyText" maxlength="12000" required></textarea></label>
+            <label><span>Refund policy</span><textarea id="siteRefundText" maxlength="12000" required></textarea></label>
+            <label><span>Zone Token rules</span><textarea id="siteTokenRulesText" maxlength="12000" required></textarea></label>
+            <div class="admin-save-row"><button class="dashboard-primary" type="submit">Publish policies</button><span id="legalSettingsMessage"></span></div>
+          </form>
+        </section>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel" id="adminPanelSecurity" data-admin-panel="security">
+      <div class="security-manager-grid">
+        <section class="site-manager-card">
+          <div class="admin-panel-head"><div><small>DATA PORTABILITY</small><h3>Download CSV backups</h3></div></div>
+          <p class="manager-help">Download a readable backup before major changes or whenever you want an offline copy.</p>
+          <div class="export-button-grid">
+            <button type="button" data-export-type="orders">Export orders</button>
+            <button type="button" data-export-type="customers">Export customers</button>
+            <button type="button" data-export-type="redemptions">Export redemptions</button>
+            <button type="button" data-export-type="products">Export core products</button>
+            <button type="button" data-export-type="store">Export Event Store</button>
+            <button type="button" data-export-type="ledger">Export token ledger</button>
+            <button type="button" data-export-type="audit">Export audit log</button>
+          </div>
+          <p id="exportMessage" class="admin-access-message"></p>
+        </section>
+        <section class="site-manager-card audit-manager">
+          <div class="admin-panel-head"><div><small>ADMIN ACTIVITY</small><h3>Audit log</h3></div><button class="dashboard-refresh" id="refreshAuditLog" type="button">Refresh</button></div>
+          <div class="audit-list" id="auditLogList"><div class="dashboard-loading"><i></i><span>Loading activity…</span></div></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel" id="adminPanelCustomers" data-admin-panel="customers">
+      <div class="customers-admin-panel"><div class="admin-panel-head"><div><small>ACCOUNT MANAGEMENT</small><h3>Customers and wallets</h3></div><button class="dashboard-refresh" id="refreshCustomers" type="button">Refresh</button></div><div class="store-admin-filters"><input id="customerSearch" type="search" placeholder="Search name, email, Roblox, Discord or gang"></div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>Roblox / Gang</th><th>Balance</th><th>Orders</th><th>Redemptions</th><th>Adjust</th></tr></thead><tbody id="customerTableBody"><tr><td colspan="6"><div class="dashboard-loading"><i></i><span>Loading customers…</span></div></td></tr></tbody></table></div></div>
+    </div>
+
+    <div class="admin-tab-panel" id="adminPanelAdmins" data-admin-panel="admins">
+      <div class="admin-access-layout">
+        <section class="admin-access-card">
+          <div class="admin-panel-head">
+            <div><small>OWNER-ONLY SECURITY</small><h3>Add an administrator</h3></div>
+            <span class="owner-only-badge">Owner only</span>
+          </div>
+          <form id="adminAccessForm" class="admin-access-form">
+            <label><span>Google account email</span><input id="newAdminEmail" type="email" maxlength="254" autocomplete="off" placeholder="admin@example.com" required></label>
+            <label><span>Access role</span><select id="newAdminRole"><option value="manager">Manager — almost everything</option><option value="orders">Orders admin</option><option value="store">Store admin</option><option value="support">Support — live chat + view orders</option></select></label>
+            <button class="dashboard-primary" id="addAdminButton" type="submit">Give admin access</button>
+          </form>
+          <div class="admin-access-warning">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5M12 17h.01"/></svg>
+            <p><strong>Only add people you fully trust.</strong> Choose the smallest role they need. Only the owner can add, remove or change administrators.</p>
+          </div>
+          <p class="admin-access-message" id="adminAccessMessage" aria-live="polite"></p>
+        </section>
+
+        <section class="admin-access-list-card">
+          <div class="admin-panel-head">
+            <div><small>LIVE ACCESS LIST</small><h3>Website administrators</h3></div>
+            <button class="dashboard-refresh" id="refreshAdmins" type="button">Refresh</button>
+          </div>
+          <div class="admin-access-list" id="adminAccessList">
+            <div class="dashboard-loading"><i></i><span>Loading administrators…</span></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <script src="display-utils.js?v=live-chat-theme-studio-1"></script>
+  <script src="language.js?v=live-chat-theme-studio-1"></script>
+  <script type="module" src="account.js?v=live-chat-theme-studio-1"></script>
+  <script type="module" src="tokens-store.js?v=live-chat-theme-studio-1"></script>
+  <script type="module" src="site-manager.js?v=live-chat-theme-studio-1"></script>
+  <script type="module" src="chat.js?v=live-chat-theme-studio-1"></script>
+  <script src="script.js?v=live-chat-theme-studio-1"></script>
+</body>
+</html>
