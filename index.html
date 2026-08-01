@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4">
   <link rel="manifest" href="/site.webmanifest?v=4">
-  <link rel="stylesheet" href="styles.css?v=chat-permanent-close-delete-3">
+  <link rel="stylesheet" href="styles.css?v=live-chat-left-fix-2">
 </head>
 <body>
   <div class="seasonal-effects" id="seasonalEffects" aria-hidden="true"></div>
@@ -481,42 +481,13 @@
           <div class="form-grid gang-link-grid">
             <label>
               <span>Gang shirt link <small>optional</small></span>
-              <input type="url" id="gangShirtLink" name="gang_shirt_link" placeholder="https://www.roblox.com/catalog/…">
+              <input type="url" id="gangShirtLink" name="gang_shirt_link" placeholder="Roblox shirt URL">
             </label>
             <label>
               <span>Gang pants link <small>optional</small></span>
-              <input type="url" id="gangPantsLink" name="gang_pants_link" placeholder="https://www.roblox.com/catalog/…">
+              <input type="url" id="gangPantsLink" name="gang_pants_link" placeholder="Roblox pants URL">
             </label>
           </div>
-
-          <section class="roblox-look-preview" id="robloxLookPreview" aria-live="polite">
-            <header>
-              <div><small>LIVE ROBLOX CHECK</small><strong>Player and clothing preview</strong></div>
-              <button type="button" id="refreshRobloxPreview">Refresh preview</button>
-            </header>
-            <div class="roblox-preview-placeholder" id="robloxPreviewPlaceholder">
-              <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 8h28l10 12-7 36H15L8 20 18 8Z"/><path d="M23 8v13h18V8M22 31h20M27 42h10"/></svg>
-              <div><strong>Add your Roblox username</strong><span>Your current avatar will appear here. Paste shirt and pants links to check the exact clothing assets beside it.</span></div>
-            </div>
-            <div class="roblox-preview-loading" id="robloxPreviewLoading" hidden><i></i><span>Loading Roblox preview…</span></div>
-            <div class="roblox-preview-error" id="robloxPreviewError" hidden></div>
-            <div class="roblox-preview-grid" id="robloxPreviewGrid" hidden>
-              <article class="roblox-avatar-card">
-                <div class="roblox-preview-image"><img id="robloxAvatarImage" alt="Roblox avatar preview"></div>
-                <div><small>CURRENT AVATAR</small><strong id="robloxAvatarName">Roblox player</strong><span id="robloxAvatarHandle"></span><a id="robloxProfileLink" target="_blank" rel="noopener">Open profile</a></div>
-              </article>
-              <article class="roblox-clothing-card" id="robloxShirtCard">
-                <div class="roblox-preview-image clothing"><img id="robloxShirtImage" alt="Roblox shirt preview"></div>
-                <div><small>SHIRT LINK</small><strong id="robloxShirtStatus">Not added</strong><a id="robloxShirtOpen" target="_blank" rel="noopener" hidden>Open shirt</a></div>
-              </article>
-              <article class="roblox-clothing-card" id="robloxPantsCard">
-                <div class="roblox-preview-image clothing"><img id="robloxPantsImage" alt="Roblox pants preview"></div>
-                <div><small>PANTS LINK</small><strong id="robloxPantsStatus">Not added</strong><a id="robloxPantsOpen" target="_blank" rel="noopener" hidden>Open pants</a></div>
-              </article>
-            </div>
-            <p class="roblox-preview-note">The preview uses Roblox’s live avatar and asset thumbnails so you can confirm the correct username, shirt and pants before ordering.</p>
-          </section>
-
           <label class="full-field">
             <span>Gang group link <small>optional</small></span>
             <input type="url" id="gangGroupLink" name="gang_group_link" placeholder="Roblox group URL">
@@ -597,7 +568,6 @@
       <strong>Talk directly to Zone6ix</strong>
       <p>Sign in with Google so your messages, replies and order details stay saved.</p>
       <button class="dashboard-primary" id="supportSignIn" type="button">Sign in to start</button>
-      <small class="support-signin-message" id="supportSignInMessage"></small>
     </div>
     <div class="support-chat-start" id="supportChatStart" hidden>
       <div class="support-empty-icon"><svg viewBox="0 0 64 64"><path d="M9 12h46v34H26L13 56V46H9V12Z"/><path d="M19 25h26M19 34h17"/></svg></div>
@@ -617,11 +587,7 @@
         <textarea id="supportMessageInput" maxlength="2500" rows="1" placeholder="Write a message…"></textarea>
         <button type="submit" id="supportSendButton" aria-label="Send message"><svg viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2-7-8-3Z"/><path d="m11 14 4-4"/></svg></button>
       </form>
-      <div class="support-chat-actions">
-        <button type="button" id="supportConversationToggle">Close permanently</button>
-        <button class="support-delete-action" type="button" id="supportConversationDelete">Delete for both sides</button>
-        <span id="supportComposeMessage"></span>
-      </div>
+      <div class="support-chat-actions"><button type="button" id="supportConversationToggle">Close conversation</button><span id="supportComposeMessage"></span></div>
     </div>
   </section>
 
@@ -868,7 +834,7 @@
                 <form class="support-compose admin" id="adminSupportCompose">
                   <label class="support-attach"><input id="adminSupportImageInput" type="file" accept="image/jpeg,image/png,image/webp"><svg viewBox="0 0 24 24"><path d="m8 12 5-5a4 4 0 0 1 6 6l-7 7a6 6 0 0 1-9-9l8-8"/></svg></label>
                   <textarea id="adminSupportMessage" maxlength="2500" rows="2" placeholder="Reply as Zone6ix Support…"></textarea>
-                  <button type="submit" id="adminSupportSendButton" aria-label="Send reply"><svg viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2-7-8-3Z"/><path d="m11 14 4-4"/></svg></button>
+                  <button type="submit" aria-label="Send reply"><svg viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2-7-8-3Z"/><path d="m11 14 4-4"/></svg></button>
                 </form>
                 <div class="support-quick-replies" id="supportQuickReplies"><button type="button">Thanks for messaging — I’m checking this now.</button><button type="button">Can you send a screenshot or reference image?</button><button type="button">I’ve linked this chat to your order.</button><button type="button">Your order update has been saved.</button></div>
                 <small id="adminSupportComposeMessage"></small>
@@ -877,10 +843,9 @@
                 <div id="adminChatCustomerDetails"></div>
                 <label><span>Linked order</span><select id="adminChatOrderSelect"><option value="">No linked order</option></select></label>
                 <label><span>Internal admin note</span><textarea id="adminChatInternalNote" maxlength="5000" placeholder="Customers cannot see this note."></textarea></label>
-                <label><span>Conversation status</span><select id="adminChatStatus"><option value="open">Open</option><option value="closed">Closed permanently</option><option value="archived">Archived</option></select></label>
+                <label><span>Conversation status</span><select id="adminChatStatus"><option value="open">Open</option><option value="closed">Closed</option><option value="archived">Archived</option></select></label>
                 <label class="admin-toggle compact"><input id="adminChatBlocked" type="checkbox"><span></span><div><strong>Block messages</strong><small>Customer keeps history but cannot send.</small></div></label>
                 <button class="dashboard-primary" id="saveAdminConversation" type="button">Save conversation</button>
-                <button class="dashboard-delete" id="deleteAdminConversation" type="button">Delete conversation for both sides</button>
                 <small id="adminConversationMessage"></small>
               </aside>
             </div>
@@ -1064,13 +1029,12 @@
     </div>
   </section>
 
-  <script src="display-utils.js?v=chat-permanent-close-delete-3"></script>
-  <script src="language.js?v=chat-permanent-close-delete-3"></script>
-  <script type="module" src="account.js?v=chat-permanent-close-delete-3"></script>
-  <script type="module" src="tokens-store.js?v=chat-permanent-close-delete-3"></script>
-  <script type="module" src="site-manager.js?v=chat-permanent-close-delete-3"></script>
-  <script type="module" src="chat.js?v=chat-permanent-close-delete-3"></script>
-  <script type="module" src="roblox-preview.js?v=roblox-preview-rate-limit-4"></script>
-  <script src="script.js?v=chat-permanent-close-delete-3"></script>
+  <script src="display-utils.js?v=live-chat-theme-studio-1"></script>
+  <script src="language.js?v=live-chat-theme-studio-1"></script>
+  <script type="module" src="account.js?v=live-chat-theme-studio-1"></script>
+  <script type="module" src="tokens-store.js?v=live-chat-theme-studio-1"></script>
+  <script type="module" src="site-manager.js?v=live-chat-theme-studio-1"></script>
+  <script type="module" src="chat.js?v=live-chat-theme-studio-1"></script>
+  <script src="script.js?v=live-chat-theme-studio-1"></script>
 </body>
 </html>
